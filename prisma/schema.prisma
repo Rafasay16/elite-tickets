@@ -1,0 +1,65 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  role      String   @default("CLIENT") // ORGANIZER, CLIENT, PORTARIA
+  createdAt DateTime @default(now())
+
+  events       Event[] 
+  reservations Reservation[] 
+}
+
+model Event {
+  id           String   @id @default(cuid())
+  externalId   String   // TMDb Movie ID
+  title        String
+  posterUrl    String?
+  backdropUrl  String?
+  date         DateTime
+  location     String
+  price        Float
+  capacity     Int
+  status       String   @default("PUBLISHED") // PUBLISHED, CANCELLED
+  organizerId  String
+  createdAt    DateTime @default(now())
+
+  organizer    User     @relation(fields: [organizerId], references: [id])
+  seats        Seat[]
+  reservations Reservation[]
+}
+
+model Seat {
+  id      String   @id @default(cuid())
+  eventId String
+  row     String
+  number  Int
+  status  String   @default("AVAILABLE") // AVAILABLE, RESERVED, SOLD
+
+  event   Event @relation(fields: [eventId], references: [id])
+  reservation Reservation?
+
+  @@unique([eventId, row, number])
+}
+
+model Reservation {
+  id        String   @id @default(cuid())
+  eventId   String
+  userId    String
+  seatId    String   @unique
+  qrCode    String   @unique @default(uuid())
+  status    String   @default("PENDING") // PENDING, PAID, VALIDATED, USED
+  createdAt DateTime @default(now())
+
+  event Event @relation(fields: [eventId], references: [id])
+  user  User  @relation(fields: [userId], references: [id])
+  seat  Seat  @relation(fields: [seatId], references: [id])
+}
