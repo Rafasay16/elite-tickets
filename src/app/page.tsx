@@ -3,6 +3,7 @@ import Link from "next/link";
 import Header from "@/components/Header";
 import { PrismaClient } from "@prisma/client";
 import { getImageUrl } from "@/lib/tmdb";
+import { CalendarIcon, MapPinIcon } from "@/components/Icons";
 import styles from "./page.module.css";
 
 const prisma = new PrismaClient();
@@ -46,8 +47,8 @@ export default async function Home() {
               <div className={styles.cardInfo}>
                 <h3>{event.title}</h3>
                 <div className={styles.meta}>
-                  <span>🗓️ {new Date(event.date).toLocaleDateString('pt-BR')}</span>
-                  <span>📍 {event.location}</span>
+                  <span><CalendarIcon /> {new Date(event.date).toLocaleDateString('pt-BR')}</span>
+                  <span><MapPinIcon /> {event.location}</span>
                 </div>
                 <div className={styles.price}>
                   {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(event.price)}

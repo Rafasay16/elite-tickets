@@ -3,9 +3,10 @@
   top: 0;
   z-index: 50;
   border-bottom: 1px solid var(--border-glass);
-  background: rgba(15, 23, 42, 0.8);
+  background: var(--background-card);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+  transition: background 0.3s ease, border-color 0.3s ease;
 }
 
 .container {

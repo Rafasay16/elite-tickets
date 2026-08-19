@@ -18,14 +18,14 @@ export async function fetchPopularMovies(): Promise<TMDbMovie[]> {
         poster_path: "/spiderman_poster.jpg",
         backdrop_path: "/spiderman_backdrop.jpg",
         overview: "Peter Parker precisa lidar com as consequências de suas escolhas em um novo e perigoso dia para o Homem-Aranha...",
-        release_date: "2026-07-15",
+        release_date: "2026-07-31",
       },
       {
         id: 102,
-        title: "Oppenheimer",
+        title: "Flash",
         poster_path: "/rktDFPbfHfUbArZ6OOOKsXcv0Bm.jpg",
         backdrop_path: "/fm6KqXn3wK0L9E1BvBDB4sT0x3F.jpg",
-        overview: "A história do cientista americano J. Robert Oppenheimer e o seu papel no desenvolvimento da bomba atômica.",
+        overview: "A história de Barry Allen, um jovem que se torna o super-herói conhecido como Flash, o homem mais rápido do mundo.",
         release_date: "2023-07-19",
       },
       {

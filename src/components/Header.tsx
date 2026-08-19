@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import styles from './Header.module.css';
+import ThemeToggle from './ThemeToggle';
 
 export default function Header() {
   return (
@@ -10,12 +11,15 @@ export default function Header() {
           <span className="text-gradient">Elite Tickets</span>
         </Link>
 
-        <nav className={styles.nav}>
-          <Link href="/" className={styles.navLink}>Eventos</Link>
-          <Link href="/meus-ingressos" className={styles.navLink}>Meus Ingressos</Link>
-          <Link href="/organizador" className={styles.navLink}>Área do Organizador</Link>
-          <Link href="/portaria" className={styles.navLink}>Portaria</Link>
-        </nav>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <nav className={styles.nav}>
+            <Link href="/" className={styles.navLink}>Eventos</Link>
+            <Link href="/meus-ingressos" className={styles.navLink}>Meus Ingressos</Link>
+            <Link href="/organizador" className={styles.navLink}>Área do Organizador</Link>
+            <Link href="/portaria" className={styles.navLink}>Portaria</Link>
+          </nav>
+          <ThemeToggle />
+        </div>
       </div>
     </header>
   );

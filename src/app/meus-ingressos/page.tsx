@@ -5,6 +5,7 @@ import QRCode from "qrcode";
 import ShareButton from "@/components/ShareButton";
 import styles from "./page.module.css";
 import { getImageUrl } from "@/lib/tmdb";
+import { CalendarIcon, MapPinIcon } from "@/components/Icons";
 
 const prisma = new PrismaClient();
 export const dynamic = 'force-dynamic';
@@ -65,8 +66,8 @@ export default async function MeusIngressos({ searchParams }: { searchParams: { 
                   />
                   <div>
                     <h3>{res.event.title}</h3>
-                    <p className="text-secondary">📍 {res.event.location}</p>
-                    <p className="text-secondary">🗓️ {new Date(res.event.date).toLocaleString('pt-BR')}</p>
+                    <p className="text-secondary" style={{ display: 'flex', alignItems: 'center' }}><MapPinIcon /> {res.event.location}</p>
+                    <p className="text-secondary" style={{ display: 'flex', alignItems: 'center' }}><CalendarIcon /> {new Date(res.event.date).toLocaleString('pt-BR')}</p>
                     <div className={styles.seatBadge}>
                       Fila {res.seat.row} - Assento {res.seat.number}
                     </div>

@@ -4,6 +4,7 @@ import { PrismaClient } from "@prisma/client";
 import { getImageUrl } from "@/lib/tmdb";
 import SeatMap from "@/components/SeatMap";
 import { notFound } from "next/navigation";
+import { CalendarIcon, MapPinIcon } from "@/components/Icons";
 import styles from "./page.module.css";
 
 const prisma = new PrismaClient();
@@ -60,8 +61,8 @@ export default async function EventoPage({ params }: { params: { id: string } })
           <div className={styles.info}>
             <h1 className="neon-text">{event.title}</h1>
             <div className={styles.meta}>
-              <span>🗓️ {new Date(event.date).toLocaleString('pt-BR')}</span>
-              <span>📍 {event.location}</span>
+              <span><CalendarIcon /> {new Date(event.date).toLocaleString('pt-BR')}</span>
+              <span><MapPinIcon /> {event.location}</span>
               <span className={styles.price}>
                 {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(event.price)}
               </span>
