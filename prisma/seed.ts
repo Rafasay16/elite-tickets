@@ -27,9 +27,9 @@ async function main() {
   const event1 = await prisma.event.create({
     data: {
       externalId: '101',
-      title: 'Duna: Parte Dois',
-      posterUrl: '/1pdfLvkbY9ohJlCjQH2JGjjcNsV.jpg',
-      backdropUrl: '/8rpDcsfLJypbO6vtec0fsZbbLge.jpg',
+      title: 'Homem-Aranha: Um Novo Dia',
+      posterUrl: '/spiderman_poster.jpg',
+      backdropUrl: '/spiderman_backdrop.jpg',
       date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), 
       location: 'Cine Araújo - Sala VIP 1',
       price: 45.00,

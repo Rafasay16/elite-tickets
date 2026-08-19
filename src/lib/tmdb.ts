@@ -14,11 +14,11 @@ export async function fetchPopularMovies(): Promise<TMDbMovie[]> {
     return [
       {
         id: 101,
-        title: "Duna: Parte Dois",
-        poster_path: "/1pdfLvkbY9ohJlCjQH2JGjjcNsV.jpg",
-        backdrop_path: "/8rpDcsfLJypbO6vtec0fsZbbLge.jpg",
-        overview: "Paul Atreides se une a Chani e aos Fremen em uma guerra de vingança...",
-        release_date: "2024-02-27",
+        title: "Homem-Aranha: Um Novo Dia",
+        poster_path: "/spiderman_poster.jpg",
+        backdrop_path: "/spiderman_backdrop.jpg",
+        overview: "Peter Parker precisa lidar com as consequências de suas escolhas em um novo e perigoso dia para o Homem-Aranha...",
+        release_date: "2026-07-15",
       },
       {
         id: 102,
@@ -46,6 +46,7 @@ export async function fetchPopularMovies(): Promise<TMDbMovie[]> {
 }
 
 export function getImageUrl(path: string | null, size: "w500" | "original" = "w500") {
-  if (!path) return "https://via.placeholder.com/500x750?text=Sem+Imagem";
+  if (!path) return 'https://via.placeholder.com/500x750?text=Sem+Imagem';
+  if (path.startsWith('/spiderman_')) return path;
   return `https://image.tmdb.org/t/p/${size}${path}`;
 }
