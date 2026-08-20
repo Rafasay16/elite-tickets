@@ -5,13 +5,13 @@
   --text-primary: #f8fafc; /* Slate 50 */
   --text-secondary: #94a3b8; /* Slate 400 */
   
-  --accent-neon: #38bdf8; /* Light Blue 400 */
-  --accent-neon-glow: rgba(56, 189, 248, 0.5);
-  --accent-purple: #c084fc; /* Purple 400 */
-  --accent-purple-glow: rgba(192, 132, 252, 0.5);
+  --accent-neon: #2563eb; /* Azul Royal Sólido */
+  --accent-neon-glow: rgba(37, 99, 235, 0.4);
+  --accent-purple: #4f46e5; /* Índigo Sólido para hover */
+  --accent-purple-glow: rgba(79, 70, 229, 0.4);
 
-  --success: #34d399;
-  --danger: #ef4444;
+  --success: #059669; /* Verde sólido */
+  --danger: #dc2626; /* Vermelho sólido */
 
   --font-primary: var(--font-body), system-ui, sans-serif;
   --font-heading-family: var(--font-heading), system-ui, sans-serif;
@@ -24,10 +24,10 @@
   --text-primary: #0f172a; /* Slate 900 */
   --text-secondary: #475569; /* Slate 600 */
   
-  --accent-neon: #0284c7; /* Mais forte pro fundo claro */
-  --accent-neon-glow: rgba(2, 132, 199, 0.3);
-  --accent-purple: #9333ea;
-  --accent-purple-glow: rgba(147, 51, 234, 0.3);
+  --accent-neon: #1d4ed8; 
+  --accent-neon-glow: rgba(29, 78, 216, 0.2);
+  --accent-purple: #4338ca;
+  --accent-purple-glow: rgba(67, 56, 202, 0.2);
 }
 
 * {
@@ -44,10 +44,6 @@ body {
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   transition: background-color 0.3s ease, color 0.3s ease;
-  background-image: 
-    radial-gradient(circle at 15% 50%, rgba(56, 189, 248, 0.1), transparent 25%),
-    radial-gradient(circle at 85% 30%, rgba(192, 132, 252, 0.1), transparent 25%);
-  background-attachment: fixed;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -69,10 +65,8 @@ button {
 
 /* Typography Utilities */
 .text-gradient {
-  background: linear-gradient(135deg, var(--accent-neon), var(--accent-purple));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--accent-neon);
+  font-weight: 800;
 }
 
 /* Glassmorphism utility */
@@ -110,14 +104,15 @@ button {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, var(--accent-neon), var(--accent-purple));
+  background: var(--accent-neon);
   color: white;
-  box-shadow: 0 4px 15px rgba(192, 132, 252, 0.3);
+  box-shadow: 0 4px 15px var(--accent-neon-glow);
 }
 
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(192, 132, 252, 0.5);
+  background: var(--accent-purple);
+  box-shadow: 0 6px 20px var(--accent-purple-glow);
 }
 
 .btn-secondary {

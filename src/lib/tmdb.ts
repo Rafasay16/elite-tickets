@@ -47,6 +47,7 @@ export async function fetchPopularMovies(): Promise<TMDbMovie[]> {
 
 export function getImageUrl(path: string | null, size: "w500" | "original" = "w500") {
   if (!path) return 'https://via.placeholder.com/500x750?text=Sem+Imagem';
-  if (path.startsWith('/spiderman_')) return path;
+  if (path.startsWith('http')) return path;
+  if (path.startsWith('/spiderman') || path.startsWith('/dune') || path.startsWith('/coldplay') || path.startsWith('/lolla')) return path;
   return `https://image.tmdb.org/t/p/${size}${path}`;
 }

@@ -29,6 +29,7 @@ model Event {
   price        Float
   capacity     Int
   status       String   @default("PUBLISHED") // PUBLISHED, CANCELLED
+  type         String   @default("MOVIE") // MOVIE, SHOW
   organizerId  String
   createdAt    DateTime @default(now())
 
