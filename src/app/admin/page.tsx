@@ -1,4 +1,3 @@
-import Header from "@/components/Header";
 import { fetchPopularMovies } from "@/lib/tmdb";
 import EventForm from "@/components/EventForm";
 
@@ -9,7 +8,6 @@ export default async function OrganizadorPage() {
 
   return (
     <main>
-      <Header />
       <div className="container" style={{ padding: '4rem 1.5rem' }}>
         <h1 className="neon-text" style={{ marginBottom: '1rem' }}>Painel do Organizador</h1>
         <p className="text-secondary" style={{ marginBottom: '3rem' }}>Selecione um filme do catálogo (TMDb) para criar uma sessão de estreia.</p>

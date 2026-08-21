@@ -1,7 +1,7 @@
 'use client';
 import { useState } from "react";
-import Header from "@/components/Header";
-import QRScanner from "@/components/QRScanner";
+import { useRef, useEffect } from "react";
+import QrScanner from "qr-scanner";
 
 export default function PortariaPage() {
   const [manualCode, setManualCode] = useState("");
@@ -40,57 +40,54 @@ export default function PortariaPage() {
   };
 
   return (
-    <main>
-      <Header />
-      <div className="container" style={{ padding: '4rem 1.5rem', maxWidth: '600px' }}>
-        <h1 className="neon-text" style={{ textAlign: 'center', marginBottom: '2rem' }}>Controle de Portaria</h1>
+    <main className="container" style={{ padding: '4rem 1.5rem', maxWidth: '600px' }}>
+      <h1 className="neon-text" style={{ textAlign: 'center', marginBottom: '2rem' }}>Controle de Portaria</h1>
+      
+      <div className="glass-panel" style={{ padding: '2rem' }}>
         
-        <div className="glass-panel" style={{ padding: '2rem' }}>
-          
-          <div style={{ marginBottom: '2rem' }}>
-            <h3 style={{ marginBottom: '1rem', textAlign: 'center' }}>Leitura por Câmera</h3>
-            <QRScanner onScan={validateCode} />
-          </div>
-
-          <div style={{ textAlign: 'center', marginBottom: '2rem', color: 'var(--text-secondary)' }}>OU</div>
-
-          <form onSubmit={handleManualSubmit} style={{ display: 'flex', gap: '1rem' }}>
-            <input 
-              type="text" 
-              placeholder="Digite o código manualmente..." 
-              value={manualCode}
-              onChange={(e) => setManualCode(e.target.value)}
-              style={{ flex: 1, padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-glass)', background: 'rgba(0,0,0,0.5)', color: 'white' }}
-            />
-            <button type="submit" className="btn btn-primary" disabled={loading}>Validar</button>
-          </form>
-
-          {loading && <p style={{ textAlign: 'center', marginTop: '1rem' }}>Validando...</p>}
-
-          {result && (
-            <div style={{
-              marginTop: '2rem',
-              padding: '1.5rem',
-              borderRadius: '8px',
-              textAlign: 'center',
-              background: result.status === 'success' ? 'rgba(52, 211, 153, 0.2)' : result.status === 'warning' ? 'rgba(251, 191, 36, 0.2)' : 'rgba(239, 68, 68, 0.2)',
-              border: `1px solid ${result.status === 'success' ? 'var(--success)' : result.status === 'warning' ? '#fbbf24' : 'var(--danger)'}`
-            }}>
-              <h2 style={{ color: result.status === 'success' ? 'var(--success)' : result.status === 'warning' ? '#fbbf24' : 'var(--danger)' }}>
-                {result.message}
-              </h2>
-              {result.details && <p style={{ marginTop: '0.5rem', color: 'var(--text-primary)' }}>{result.details}</p>}
-              
-              <button 
-                className="btn btn-secondary" 
-                style={{ marginTop: '1rem' }} 
-                onClick={() => setResult(null)}
-              >
-                Escanear Próximo
-              </button>
-            </div>
-          )}
+        <div style={{ marginBottom: '2rem' }}>
+          <h3 style={{ marginBottom: '1rem', textAlign: 'center' }}>Leitura por Câmera</h3>
+          <div id="qr-reader" style={{ width: '100%', maxWidth: '400px', margin: '0 auto' }}></div>
         </div>
+
+        <div style={{ textAlign: 'center', marginBottom: '2rem', color: 'var(--text-secondary)' }}>OU</div>
+
+        <form onSubmit={handleManualSubmit} style={{ display: 'flex', gap: '1rem' }}>
+          <input 
+            type="text" 
+            placeholder="Digite o código manualmente..." 
+            value={manualCode}
+            onChange={(e) => setManualCode(e.target.value)}
+            style={{ flex: 1, padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-glass)', background: 'rgba(0,0,0,0.5)', color: 'white' }}
+          />
+          <button type="submit" className="btn btn-primary" disabled={loading}>Validar</button>
+        </form>
+
+        {loading && <p style={{ textAlign: 'center', marginTop: '1rem' }}>Validando...</p>}
+
+        {result && (
+          <div style={{
+            marginTop: '2rem',
+            padding: '1.5rem',
+            borderRadius: '8px',
+            textAlign: 'center',
+            background: result.status === 'success' ? 'rgba(52, 211, 153, 0.2)' : result.status === 'warning' ? 'rgba(251, 191, 36, 0.2)' : 'rgba(239, 68, 68, 0.2)',
+            border: `1px solid ${result.status === 'success' ? 'var(--success)' : result.status === 'warning' ? '#fbbf24' : 'var(--danger)'}`
+          }}>
+            <h2 style={{ color: result.status === 'success' ? 'var(--success)' : result.status === 'warning' ? '#fbbf24' : 'var(--danger)' }}>
+              {result.message}
+            </h2>
+            {result.details && <p style={{ marginTop: '0.5rem', color: 'var(--text-primary)' }}>{result.details}</p>}
+            
+            <button 
+              className="btn btn-secondary" 
+              style={{ marginTop: '1rem' }} 
+              onClick={() => setResult(null)}
+            >
+              Escanear Próximo
+            </button>
+          </div>
+        )}
       </div>
     </main>
   );

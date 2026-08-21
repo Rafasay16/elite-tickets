@@ -1,6 +1,5 @@
 import Image from "next/image";
 import Link from "next/link";
-import Header from "@/components/Header";
 import Carousel from "@/components/Carousel";
 import { PrismaClient } from "@prisma/client";
 import { getImageUrl } from "@/lib/tmdb";
@@ -50,7 +49,6 @@ export default async function Home() {
 
   return (
     <main>
-      <Header />
       
       <Carousel events={featuredEvents} />
 

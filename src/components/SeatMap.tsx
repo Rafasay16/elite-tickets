@@ -32,8 +32,12 @@ export default function SeatMap({ seatsByRow, eventId, price }: { seatsByRow: Re
       
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
+
+      // Limpar seleção
+      setSelectedSeat(null);
       
-      router.push('/meus-ingressos?sucesso=true');
+      // Ir para tela de pagamento
+      router.push(`/pagamento/${data.reservation.id}`);
     } catch (err: any) {
       alert(`Erro ao reservar: ${err.message}`);
       setLoading(false);

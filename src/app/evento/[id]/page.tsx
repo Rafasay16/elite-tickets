@@ -1,5 +1,4 @@
 import Image from "next/image";
-import Header from "@/components/Header";
 import { PrismaClient } from "@prisma/client";
 import { getImageUrl } from "@/lib/tmdb";
 import SeatMap from "@/components/SeatMap";
@@ -38,7 +37,6 @@ export default async function EventoPage({ params }: { params: { id: string } })
 
   return (
     <main>
-      <Header />
       
       <div className={styles.backdropContainer}>
         <div className={styles.backdropOverlay}></div>

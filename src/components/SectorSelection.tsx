@@ -49,7 +49,8 @@ export default function SectorSelection({ seats, eventId, basePrice }: { seats: 
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       
-      router.push('/meus-ingressos?sucesso=true');
+      // Direciona para a página de pagamento com o ID da reserva
+      router.push(`/pagamento/${data.reservation.id}`);
     } catch (err: any) {
       alert(`Erro ao reservar: ${err.message}`);
       setLoading(false);

@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client'
+import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
 
@@ -89,11 +90,21 @@ async function main() {
   await prisma.user.deleteMany()
 
   const organizador = await prisma.user.create({
-    data: { name: 'João Organizador', email: 'organizador@elite.com', role: 'ORGANIZER' }
+    data: { 
+      name: 'Admin Elite', 
+      email: 'admin@admin.com', 
+      password: await bcrypt.hash('123456', 10),
+      role: 'ORGANIZER' 
+    }
   })
 
   const cliente1 = await prisma.user.create({
-    data: { name: 'Maria Cliente', email: 'maria@cliente.com', role: 'CLIENT' }
+    data: { 
+      name: 'Rafael Cliente', 
+      email: 'rafael@gmail.com', 
+      password: await bcrypt.hash('123456', 10),
+      role: 'CLIENT' 
+    }
   })
 
   const movies = await fetchMovies();
