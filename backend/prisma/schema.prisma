@@ -1,0 +1,74 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String        @id @default(uuid())
+  name         String
+  email        String        @unique
+  cpf          String?       @unique // CPF para convidados/compradores e obrigatório para organizadores
+  cnpj         String?       @unique // CNPJ para organizadores (opcional)
+  responsavel  String? // Nome do responsável pela produtora
+  password     String? // Senha para autenticação (nova funcionalidade)
+  city         String? // Cidade do cliente
+  role         String        @default("CLIENT")
+  isActive     Boolean       @default(true) // Controle de banimento pelo Super Admin
+  feeRate      Float         @default(0.15) // Taxa de serviço (ex: 0.15 = 15%)
+  eventLimit   Int           @default(5) // Limite de eventos criados pelo organizador
+  reservations Reservation[]
+  events       Event[]       @relation("OrganizerEvents") // Apenas para ORGANIZER
+}
+
+model Event {
+  id                String        @id @default(uuid())
+  externalId        String?       // ID da API externa (TMDb ou Ticketmaster) - NÃO É MAIS UNIQUE
+  type              String        @default("MOVIE") // MOVIE ou SHOW
+  title             String
+  description       String? // Descrição longa do evento
+  category          String? // Categoria do evento (Ex: Show, Palestra)
+  posterUrl         String?
+  backdropUrl       String?
+  date              DateTime
+  location          String
+  city              String        @default("São Paulo") // Cidade do cinema/evento
+  price             Float
+  capacity          Int
+  maxTicketsPerUser Int           @default(4) // Limite de compras por usuário
+  status            String        @default("PUBLISHED")
+  organizerId       String
+  organizer         User          @relation("OrganizerEvents", fields: [organizerId], references: [id])
+  seats             Seat[]
+  reservations      Reservation[]
+}
+
+model Seat {
+  id           String        @id @default(uuid())
+  eventId      String
+  row          String
+  number       Int
+  status       String        @default("AVAILABLE") // AVAILABLE, SOLD
+  event        Event         @relation(fields: [eventId], references: [id])
+  reservations Reservation[]
+
+  @@unique([eventId, row, number])
+}
+
+model Reservation {
+  id        String    @id @default(uuid())
+  userId    String
+  eventId   String
+  seatId    String
+  status    String // RESERVED, PAID, CANCELLED
+  qrCodeUrl String? // URL do QR Code de validação
+  expiresAt DateTime? // Tempo limite para pagar
+  createdAt DateTime  @default(now())
+
+  user  User  @relation(fields: [userId], references: [id])
+  event Event @relation(fields: [eventId], references: [id])
+  seat  Seat  @relation(fields: [seatId], references: [id])
+}
