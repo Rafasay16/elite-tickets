@@ -56,16 +56,12 @@ The platform supports a robust Role-Based Access Control (RBAC) system:
 
 ### Installation
 
-Clone the repository and install dependencies for both the frontend and backend.
+Clone the repository and install dependencies for the root, frontend, and backend all at once using the root script:
 
 ```bash
-# Install backend dependencies
-cd backend
+# Install all dependencies (root, backend, and frontend)
 npm install
-
-# Install frontend dependencies
-cd ../frontend
-npm install
+npm run install:all
 ```
 
 ### Configuration
@@ -93,28 +89,19 @@ TMDB_API_KEY="your_tmdb_api_key_here"
 
 ### Running the Application
 
-To run the application locally, you need to start both servers.
+To run the application locally, you can start both servers simultaneously using a single command from the root directory:
 
-**Start the Backend API:**
 ```bash
-cd backend
 npm run dev
 ```
 
-**Start the Frontend Client:**
-```bash
-cd frontend
-npm run dev
-```
-
-The frontend will be available at `http://localhost:3000` and the backend API at `http://localhost:3333`.
+This will use `concurrently` to launch both the backend API and the frontend client. The frontend will be available at `http://localhost:3000` and the backend API at `http://localhost:3333`.
 
 ## Database Management
 
-You can inspect and manage the database using Prisma Studio:
+You can inspect and manage the database using Prisma Studio directly from the root directory:
 ```bash
-cd backend
-npx prisma studio
+npm run prisma:studio
 ```
 
 ## License
