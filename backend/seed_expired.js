@@ -13,7 +13,7 @@ async function main() {
   // Criar um evento expirado
   const expiredEvent = await prisma.event.create({
     data: {
-      title: 'De Volta Para o Passado (Expirado)',
+      title: 'De Volta Para o Futuro',
       description: 'Este evento já aconteceu há muito tempo!',
       category: 'SHOW',
       date: new Date('2024-01-01T20:00:00.000Z'), // Data no passado

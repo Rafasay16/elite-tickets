@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { AuthService } from '@/services/AuthService';
@@ -10,13 +10,41 @@ export default function RegisterPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  
+  const [selectedState, setSelectedState] = useState('');
   const [city, setCity] = useState('');
+  
+  const [states, setStates] = useState<any[]>([]);
+  const [cities, setCities] = useState<any[]>([]);
+  
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
+  useEffect(() => {
+    fetch('https://servicodados.ibge.gov.br/api/v1/localidades/estados?orderBy=nome')
+      .then(res => res.json())
+      .then(data => setStates(data))
+      .catch(err => console.error('Erro ao buscar estados', err));
+  }, []);
+
+  useEffect(() => {
+    if (!selectedState) {
+      setCities([]);
+      return;
+    }
+    fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${selectedState}/municipios?orderBy=nome`)
+      .then(res => res.json())
+      .then(data => setCities(data))
+      .catch(err => console.error('Erro ao buscar cidades', err));
+  }, [selectedState]);
+
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!city) {
+      setError('Por favor, selecione sua cidade.');
+      return;
+    }
     setLoading(true);
     setError('');
 
@@ -80,17 +108,41 @@ export default function RegisterPage() {
               />
             </div>
 
-            <div className={styles.inputGroup}>
-              <label htmlFor="city">Sua Cidade</label>
-              <input
-                type="text"
-                id="city"
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
-                required
-                className={styles.input}
-                placeholder="Ex: São Paulo"
-              />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+              <div className={styles.inputGroup} style={{ marginBottom: 0 }}>
+                <label htmlFor="state">Estado (UF)</label>
+                <select
+                  id="state"
+                  value={selectedState}
+                  onChange={(e) => setSelectedState(e.target.value)}
+                  required
+                  className={styles.input}
+                  style={{ appearance: 'auto', width: '100%' }}
+                >
+                  <option value="" style={{ color: 'black' }}>Selecione</option>
+                  {states.map(state => (
+                    <option key={state.id} value={state.sigla} style={{ color: 'black' }}>{state.nome}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className={styles.inputGroup} style={{ marginBottom: 0 }}>
+                <label htmlFor="city">Sua Cidade</label>
+                <select
+                  id="city"
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  required
+                  disabled={!selectedState || cities.length === 0}
+                  className={styles.input}
+                  style={{ appearance: 'auto', opacity: (!selectedState || cities.length === 0) ? 0.5 : 1, width: '100%' }}
+                >
+                  <option value="" style={{ color: 'black' }}>Selecione</option>
+                  {cities.map(c => (
+                    <option key={c.id} value={c.nome} style={{ color: 'black' }}>{c.nome}</option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             <button type="submit" className="btn btn-primary" disabled={loading} style={{ width: '100%', marginTop: '1rem' }}>

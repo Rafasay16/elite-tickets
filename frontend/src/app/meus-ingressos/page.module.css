@@ -19,6 +19,7 @@
   display: flex;
   overflow: hidden;
   position: relative;
+  flex: 1;
 }
 
 .eventInfo {
@@ -116,6 +117,9 @@
 
 .expiredWrapper {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 .expiredTag {

@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { getImageUrl, TMDbMovie } from '@/lib/tmdb';
 import { useRouter } from 'next/navigation';
@@ -15,8 +15,31 @@ export default function EventForm({ movie }: { movie: TMDbMovie }) {
     location: 'Cine Araújo - Sala VIP 1',
     price: '45.00',
     capacity: '50',
-    maxTicketsPerUser: '4'
+    maxTicketsPerUser: '4',
+    city: ''
   });
+
+  const [selectedState, setSelectedState] = useState('');
+  const [states, setStates] = useState<any[]>([]);
+  const [cities, setCities] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetch('https://servicodados.ibge.gov.br/api/v1/localidades/estados?orderBy=nome')
+      .then(res => res.json())
+      .then(data => setStates(data))
+      .catch(err => console.error('Erro ao buscar estados', err));
+  }, []);
+
+  useEffect(() => {
+    if (!selectedState) {
+      setCities([]);
+      return;
+    }
+    fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${selectedState}/municipios?orderBy=nome`)
+      .then(res => res.json())
+      .then(data => setCities(data))
+      .catch(err => console.error('Erro ao buscar cidades', err));
+  }, [selectedState]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,6 +54,7 @@ export default function EventForm({ movie }: { movie: TMDbMovie }) {
         backdropUrl: getImageUrl(movie.backdrop_path),
         date: new Date(formData.date).toISOString(),
         location: formData.location,
+        city: formData.city,
         price: Number(formData.price),
         capacity: Number(formData.capacity),
         maxTicketsPerUser: Number(formData.maxTicketsPerUser)
@@ -83,6 +107,39 @@ export default function EventForm({ movie }: { movie: TMDbMovie }) {
                   onChange={(e) => setFormData({...formData, date: e.target.value})}
                   style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-glass)', background: 'rgba(0,0,0,0.5)', color: 'white' }}
                 />
+              </div>
+
+              <div style={{ display: 'flex', gap: '1rem' }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Estado (UF)</label>
+                  <select
+                    value={selectedState}
+                    onChange={(e) => setSelectedState(e.target.value)}
+                    required
+                    style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-glass)', background: 'rgba(0,0,0,0.5)', color: 'white' }}
+                  >
+                    <option value="" style={{ color: 'black' }}>Selecione o Estado</option>
+                    {states.map(state => (
+                      <option key={state.id} value={state.sigla} style={{ color: 'black' }}>{state.nome}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div style={{ flex: 2 }}>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Cidade</label>
+                  <select
+                    value={formData.city}
+                    onChange={(e) => setFormData({...formData, city: e.target.value})}
+                    required
+                    disabled={!selectedState || cities.length === 0}
+                    style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-glass)', background: 'rgba(0,0,0,0.5)', color: 'white', opacity: (!selectedState || cities.length === 0) ? 0.5 : 1 }}
+                  >
+                    <option value="" style={{ color: 'black' }}>Selecione a Cidade</option>
+                    {cities.map(city => (
+                      <option key={city.id} value={city.nome} style={{ color: 'black' }}>{city.nome}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               <div>

@@ -23,8 +23,10 @@ export default async function MeusIngressos({ searchParams }: { searchParams: { 
 
   let reservations: any[] = [];
   if (token) {
-    try {
-      const res = await fetch('http://localhost:3333/api/users/my-tickets', {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3333/api';
+  
+  try {
+    const res = await fetch(`${apiUrl}/users/my-tickets`, {
         headers: { Authorization: `Bearer ${token}` },
         cache: 'no-store'
       });

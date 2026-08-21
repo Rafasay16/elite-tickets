@@ -16,10 +16,14 @@ model User {
   responsavel  String? // Nome do responsável pela produtora
   password     String? // Senha para autenticação (nova funcionalidade)
   city         String? // Cidade do cliente
+  phone        String? // Telefone do cliente
   role         String        @default("CLIENT")
   isActive     Boolean       @default(true) // Controle de banimento pelo Super Admin
   feeRate      Float         @default(0.15) // Taxa de serviço (ex: 0.15 = 15%)
   eventLimit   Int           @default(5) // Limite de eventos criados pelo organizador
+  photoUrl     String? // URL do avatar escolhido
+  preferences  String? // Preferências salvas como JSON string
+  paymentMock  String? // Cartão simulado salvo como JSON string
   reservations Reservation[]
   events       Event[]       @relation("OrganizerEvents") // Apenas para ORGANIZER
 }
@@ -38,6 +42,7 @@ model Event {
   city              String        @default("São Paulo") // Cidade do cinema/evento
   price             Float
   capacity          Int
+  rating            String   @default("Livre") // Classificacao indicativa (Livre, 10, 12, 14, 16, 18)
   maxTicketsPerUser Int           @default(4) // Limite de compras por usuário
   status            String        @default("PUBLISHED")
   organizerId       String

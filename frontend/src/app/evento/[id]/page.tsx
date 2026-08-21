@@ -6,12 +6,14 @@ import SectorSelection from "@/components/SectorSelection";
 import { notFound } from "next/navigation";
 import { CalendarIcon, MapPinIcon } from "@/components/Icons";
 import SessionPicker from "@/components/SessionPicker";
+import RatingBadge from "@/components/RatingBadge";
 import styles from "./page.module.css";
 
 export const dynamic = 'force-dynamic';
 
 export default async function EventoPage({ params }: { params: { id: string } }) {
-  const res = await fetch(`http://localhost:3333/api/events/${params.id}`, { cache: 'no-store' });
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3333/api';
+  const res = await fetch(`${apiUrl}/events/${params.id}`, { cache: 'no-store' });
 
   if (!res.ok) {
     return (
@@ -28,7 +30,7 @@ export default async function EventoPage({ params }: { params: { id: string } })
   // Buscar todas as sessões deste filme na mesma cidade
   let sessions = [];
   try {
-    const sessionsRes = await fetch(`http://localhost:3333/api/events?city=${encodeURIComponent(event.city)}`, { cache: 'no-store' });
+    const sessionsRes = await fetch(`${apiUrl}/events?city=${encodeURIComponent(event.city)}`, { cache: 'no-store' });
     if (sessionsRes.ok) {
       const allEvents = await sessionsRes.json();
       sessions = allEvents.filter((e: any) => (event.externalId ? e.externalId === event.externalId : e.title === event.title));
@@ -74,7 +76,10 @@ export default async function EventoPage({ params }: { params: { id: string } })
             <span className="btn" style={{ background: 'var(--accent-neon)', color: '#fff', padding: '0.2rem 1rem', borderRadius: '999px', display: 'inline-block', marginBottom: '1rem', fontSize: '0.8rem', fontWeight: 'bold'}}>
               {isShow ? 'Show / Festival' : 'Cinema Premium'}
             </span>
-            <h1 className="neon-text">{event.title}</h1>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+              <h1 className="neon-text" style={{ margin: 0 }}>{event.title}</h1>
+              <RatingBadge rating={event.rating} />
+            </div>
             <div className={styles.meta}>
               <span><CalendarIcon /> {new Date(event.date).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
               <span><MapPinIcon /> {event.location}</span>

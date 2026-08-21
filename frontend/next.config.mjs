@@ -10,7 +10,7 @@ const nextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'via.placeholder.com',
+        hostname: 'placehold.co',
       },
       {
         protocol: 'https',
@@ -19,6 +19,10 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: 's1.ticketm.net',
+      },
+      {
+        protocol: 'https',
+        hostname: 'ui-avatars.com',
       }
     ],
   },

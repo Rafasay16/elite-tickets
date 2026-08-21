@@ -8,8 +8,9 @@ export class EventController {
     try {
       const { city } = req.query;
       const whereClause: any = { status: 'PUBLISHED' };
-      if (city) {
-        whereClause.city = city;
+
+      if (city && city !== 'Todo o Brasil') {
+        whereClause.city = city as string;
       }
 
       const events = await prisma.event.findMany({

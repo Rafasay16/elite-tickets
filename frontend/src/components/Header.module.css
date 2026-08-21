@@ -46,6 +46,7 @@
   color: var(--text-secondary);
   font-weight: 500;
   transition: color 0.2s ease;
+  white-space: nowrap;
 }
 
 .navLink:hover {

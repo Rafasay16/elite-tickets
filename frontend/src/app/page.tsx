@@ -1,9 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import Carousel from "@/components/Carousel";
-import { fetchPopularMovies } from "@/lib/tmdb";
-import { getImageUrl } from "@/lib/tmdb";
+import { fetchPopularMovies, getImageUrl } from "@/lib/tmdb";
 import { CalendarIcon, MapPinIcon } from "@/components/Icons";
+import RatingBadge from "@/components/RatingBadge";
 import styles from "./page.module.css";
 import { cookies } from 'next/headers';
 import { getSession } from '@/lib/auth';
@@ -11,16 +11,18 @@ import { getSession } from '@/lib/auth';
 export default async function Home() {
   const session = await getSession();
   const cookieStore = cookies();
-  let currentCity = cookieStore.get('city')?.value || 'São Paulo';
+  let currentCity = cookieStore.get('city')?.value || 'Todo o Brasil';
   if (session && session.city) {
     currentCity = session.city;
   }
 
   const popularMovies = await fetchPopularMovies();
 
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3333/api';
+
   let events = [];
   try {
-    const res = await fetch(`http://localhost:3333/api/events?city=${encodeURIComponent(currentCity)}`, { cache: 'no-store' });
+    const res = await fetch(`${apiUrl}/events?city=${encodeURIComponent(currentCity)}`, { cache: 'no-store' });
     if (res.ok) {
       events = await res.json();
     }
@@ -56,8 +58,11 @@ export default async function Home() {
         </div>
       </div>
       <div className={styles.cardInfo}>
-        <h3>{event.title}</h3>
-        <div className={styles.meta}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
+          <h3 style={{ margin: 0 }}>{event.title}</h3>
+          <RatingBadge rating={event.rating} />
+        </div>
+        <div className={styles.meta} style={{ marginTop: '0.5rem' }}>
           <span><CalendarIcon /> Várias Sessões</span>
           <span><MapPinIcon /> {event.location}</span>
         </div>

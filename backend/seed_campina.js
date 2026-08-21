@@ -16,8 +16,8 @@ async function main() {
       type: 'MOVIE',
       title: 'Homem-Aranha',
       description: 'Peter Parker lida com as consequências de sua identidade revelada.',
-      posterUrl: '/d5iIlFn5s0ImszYzBPb8SPFCWKy.jpg',
-      backdropUrl: '/x2IqvPAuPMeHOUVNjw9lNMNPuZ3.jpg',
+      posterUrl: '/spiderman_poster.jpg',
+      backdropUrl: '/spiderman_backdrop.jpg',
       date: new Date('2026-08-25T20:00:00.000Z'), // Uma data no futuro
       location: 'Cine Campina',
       city: 'Campina Grande',
