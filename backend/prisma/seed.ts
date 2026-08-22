@@ -145,7 +145,13 @@ async function main() {
 
   const createdEvents = [];
 
+  const cities = [
+    'Campina Grande', 'Campina Grande', 'Campina Grande', 'João Pessoa', 'Recife', 'São Paulo', 'Rio de Janeiro'
+  ];
+
   for (const evt of allEvents) {
+    const randomCity = cities[Math.floor(Math.random() * cities.length)];
+    
     const created = await prisma.event.create({
       data: {
         externalId: evt.externalId,
@@ -153,7 +159,8 @@ async function main() {
         posterUrl: evt.posterUrl,
         backdropUrl: evt.backdropUrl,
         date: new Date(Date.now() + evt.dateOffset * 24 * 60 * 60 * 1000), 
-        location: evt.location,
+        location: randomCity === 'Campina Grande' ? 'Cine Campina / Parque do Povo' : evt.location,
+        city: randomCity,
         price: evt.price,
         capacity: 100,
         type: evt.type,
