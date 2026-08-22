@@ -42,7 +42,7 @@ export async function fetchPopularMovies(): Promise<TMDbMovie[]> {
   const res = await fetch(`https://api.themoviedb.org/3/movie/popular?api_key=${apiKey}&language=pt-BR`);
   if (!res.ok) throw new Error("Falha ao buscar filmes");
   const data = await res.json();
-  return data.results;
+  return data.results.filter((m: any) => !m.title.toLowerCase().includes('hotel desire'));
 }
 
 export function getImageUrl(path: string | null, size: "w500" | "original" = "w500") {

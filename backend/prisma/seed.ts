@@ -24,7 +24,7 @@ async function fetchMovies() {
   try {
     const res = await fetch(`https://api.themoviedb.org/3/movie/popular?api_key=${apiKey}&language=pt-BR`);
     const data = await res.json();
-    return data.results.slice(0, 5).map((movie: any, index: number) => ({
+    return data.results.map((movie: any, index: number) => ({
       externalId: movie.id.toString(),
       title: movie.title,
       posterUrl: movie.poster_path ? movie.poster_path : null, // TMDB path
@@ -59,7 +59,7 @@ async function fetchShows() {
   }
 
   try {
-    const res = await fetch(`https://app.ticketmaster.com/discovery/v2/events.json?apikey=${apiKey}&countryCode=BR&classificationName=music&size=5`);
+    const res = await fetch(`https://app.ticketmaster.com/discovery/v2/events.json?apikey=${apiKey}&countryCode=BR&classificationName=music&size=20`);
     const data = await res.json();
     if (!data._embedded || !data._embedded.events) return [];
     
@@ -132,13 +132,14 @@ async function main() {
   const cliente1 = await prisma.user.create({
     data: { 
       name: 'Rafael Cliente', 
-      email: 'rafael@gmail.com', 
+      email: 'rafinha@gmail.com', 
       password: await bcrypt.hash('123456', 10),
       role: 'CLIENT' 
     }
   })
 
-  const movies = await fetchMovies();
+  const rawMovies = await fetchMovies();
+  const movies = rawMovies.filter((m: any) => !m.title.toLowerCase().includes('hotel desire'));
   const shows = await fetchShows();
   const allEvents = [...movies, ...shows];
 
