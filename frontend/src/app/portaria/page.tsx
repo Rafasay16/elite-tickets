@@ -1,29 +1,95 @@
 'use client';
-import { useState } from "react";
-import { useRef, useEffect } from "react";
-import QrScanner from "qr-scanner";
+import { useState, useEffect, useRef } from "react";
+import { Html5QrcodeScanner, Html5QrcodeScanType } from "html5-qrcode";
 
 export default function PortariaPage() {
   const [manualCode, setManualCode] = useState("");
   const [result, setResult] = useState<{ status: 'success' | 'error' | 'warning', message: string, details?: string } | null>(null);
   const [loading, setLoading] = useState(false);
+  const [events, setEvents] = useState<any[]>([]);
+  const [selectedEventId, setSelectedEventId] = useState("");
+  const scannerRef = useRef<Html5QrcodeScanner | null>(null);
+  const isScanningRef = useRef(false);
+
+  useEffect(() => {
+    // Buscar eventos para popular o select
+    const fetchEvents = async () => {
+      try {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3333/api';
+        const res = await fetch(`${apiUrl}/events`, { cache: 'no-store' });
+        if (res.ok) {
+          const data = await res.json();
+          setEvents(data);
+          if (data.length > 0) setSelectedEventId(data[0].id);
+        }
+      } catch (e) {}
+    };
+    fetchEvents();
+  }, []);
+
+  useEffect(() => {
+    // Inicializar o scanner apenas quando houver um evento selecionado e montado
+    if (!selectedEventId) return;
+
+    if (!scannerRef.current) {
+      scannerRef.current = new Html5QrcodeScanner(
+        "qr-reader",
+        { fps: 10, qrbox: { width: 250, height: 250 }, supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA] },
+        false
+      );
+
+      scannerRef.current.render(
+        (decodedText) => {
+          // Evitar scan duplo enquanto carrega
+          if (!isScanningRef.current) {
+            validateCode(decodedText);
+          }
+        },
+        (error) => {
+          // ignore background scan errors
+        }
+      );
+    }
+
+    return () => {
+      if (scannerRef.current) {
+        scannerRef.current.clear().catch(e => console.log('Erro ao limpar scanner', e));
+        scannerRef.current = null;
+      }
+    };
+  }, [selectedEventId]); // Re-render scanner if event changes (or just keep it alive)
 
   const validateCode = async (code: string) => {
+    if (!selectedEventId) {
+      alert("Por favor, selecione um evento primeiro!");
+      return;
+    }
+    
+    isScanningRef.current = true;
     setLoading(true);
     setResult(null);
+
     try {
-      const res = await fetch('/api/validate', {
+      const token = localStorage.getItem('token');
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3333/api';
+      
+      const res = await fetch(`${apiUrl}/checkout/validate`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ qrCode: code })
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` 
+        },
+        body: JSON.stringify({ qrCode: code, eventId: selectedEventId })
       });
       const data = await res.json();
       
       if (!res.ok) {
         if (data.error.includes('JÁ UTILIZADO')) {
            setResult({ status: 'warning', message: 'Já Utilizado', details: 'Este ingresso já deu entrada no evento.' });
+        } else if (data.error.includes('Evento errado')) {
+           setResult({ status: 'error', message: 'Evento Errado', details: 'Este ingresso pertence a outro evento.' });
         } else {
-           setResult({ status: 'error', message: 'Inválido', details: 'QR Code não reconhecido no sistema.' });
+           setResult({ status: 'error', message: 'Inválido', details: data.error || 'QR Code não reconhecido no sistema.' });
         }
       } else {
         setResult({ status: 'success', message: 'Acesso Liberado!', details: data.details });
@@ -31,12 +97,21 @@ export default function PortariaPage() {
     } catch (err) {
       setResult({ status: 'error', message: 'Erro de Conexão' });
     }
+    
     setLoading(false);
+    
+    // Pequeno delay para evitar leitura múltipla acidental
+    setTimeout(() => {
+      isScanningRef.current = false;
+    }, 2000);
   };
 
   const handleManualSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (manualCode) validateCode(manualCode);
+    if (manualCode) {
+      validateCode(manualCode);
+      setManualCode(""); // Limpar apos submeter
+    }
   };
 
   return (
@@ -46,8 +121,24 @@ export default function PortariaPage() {
       <div className="glass-panel" style={{ padding: '2rem' }}>
         
         <div style={{ marginBottom: '2rem' }}>
+          <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Selecione o Evento Atual:</label>
+          <select 
+            value={selectedEventId} 
+            onChange={(e) => setSelectedEventId(e.target.value)}
+            className="input-field"
+            style={{ width: '100%', padding: '0.75rem', background: 'rgba(0,0,0,0.5)', color: 'white', border: '1px solid var(--border-glass)', borderRadius: '8px' }}
+          >
+            <option value="" disabled>Selecione um evento...</option>
+            {events.map(ev => (
+              <option key={ev.id} value={ev.id}>{ev.title} - {new Date(ev.date).toLocaleDateString('pt-BR')}</option>
+            ))}
+          </select>
+        </div>
+
+        <div style={{ marginBottom: '2rem' }}>
           <h3 style={{ marginBottom: '1rem', textAlign: 'center' }}>Leitura por Câmera</h3>
-          <div id="qr-reader" style={{ width: '100%', maxWidth: '400px', margin: '0 auto' }}></div>
+          {!selectedEventId && <p style={{ textAlign: 'center', color: 'var(--danger)' }}>Selecione o evento acima para ligar a câmera.</p>}
+          <div id="qr-reader" style={{ width: '100%', maxWidth: '400px', margin: '0 auto', background: 'white' }}></div>
         </div>
 
         <div style={{ textAlign: 'center', marginBottom: '2rem', color: 'var(--text-secondary)' }}>OU</div>
@@ -55,12 +146,12 @@ export default function PortariaPage() {
         <form onSubmit={handleManualSubmit} style={{ display: 'flex', gap: '1rem' }}>
           <input 
             type="text" 
-            placeholder="Digite o código manualmente..." 
+            placeholder="Digite o código manualmente (ID)" 
             value={manualCode}
             onChange={(e) => setManualCode(e.target.value)}
             style={{ flex: 1, padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-glass)', background: 'rgba(0,0,0,0.5)', color: 'white' }}
           />
-          <button type="submit" className="btn btn-primary" disabled={loading}>Validar</button>
+          <button type="submit" className="btn btn-primary" disabled={loading || !selectedEventId}>Validar</button>
         </form>
 
         {loading && <p style={{ textAlign: 'center', marginTop: '1rem' }}>Validando...</p>}
@@ -84,7 +175,7 @@ export default function PortariaPage() {
               style={{ marginTop: '1rem' }} 
               onClick={() => setResult(null)}
             >
-              Escanear Próximo
+              Limpar / Escanear Próximo
             </button>
           </div>
         )}

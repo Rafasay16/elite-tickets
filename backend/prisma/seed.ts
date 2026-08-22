@@ -115,7 +115,19 @@ async function main() {
     }
   });
 
-  console.log({ organizador, superAdmin });
+  const porteiro = await prisma.user.upsert({
+    where: { email: 'portaria@elite.com' },
+    update: { isActive: true },
+    create: {
+      name: 'Porteiro Principal',
+      email: 'portaria@elite.com',
+      password: hashedPassword,
+      role: 'PORTARIA',
+      isActive: true,
+    }
+  });
+
+  console.log({ organizador, superAdmin, porteiro });
 
   const cliente1 = await prisma.user.create({
     data: { 

@@ -43,9 +43,37 @@ export default function OrganizadorDashboard() {
   const [guestEmail, setGuestEmail] = useState('');
   const [loadingSeats, setLoadingSeats] = useState(false);
 
+  // Modal Conta Portaria
+  const [isPortariaModalOpen, setIsPortariaModalOpen] = useState(false);
+  const [porteiros, setPorteiros] = useState<any[]>([]);
+  const [portariaData, setPortariaData] = useState({ name: '', email: '', password: 'eliteportaria' });
+  const [creatingPortaria, setCreatingPortaria] = useState(false);
+  const [loadingPorteiros, setLoadingPorteiros] = useState(false);
+
   useEffect(() => {
     fetchEvents();
   }, []);
+
+  const fetchPorteiros = async () => {
+    setLoadingPorteiros(true);
+    try {
+      const token = localStorage.getItem('token');
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3333/api';
+      const res = await fetch(`${apiUrl}/users/porteiros`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setPorteiros(data);
+      }
+    } catch(e) {}
+    setLoadingPorteiros(false);
+  };
+
+  const openPortariaModal = () => {
+    setIsPortariaModalOpen(true);
+    fetchPorteiros();
+  };
 
   const fetchEvents = async () => {
     try {
@@ -163,6 +191,49 @@ export default function OrganizadorDashboard() {
     }
   };
 
+  const handleCreatePortaria = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCreatingPortaria(true);
+    try {
+      const token = localStorage.getItem('token');
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3333/api';
+      const res = await fetch(`${apiUrl}/users/porteiros`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(portariaData)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Erro ao criar conta');
+      
+      alert('Conta de portaria criada com sucesso!');
+      setPortariaData({ name: '', email: '', password: 'eliteportaria' });
+      fetchPorteiros(); // Atualiza a lista na hora
+    } catch (err: any) {
+      alert(err.message);
+    }
+    setCreatingPortaria(false);
+  };
+
+  const handleDeletePorteiro = async (id: string) => {
+    if (!confirm('Tem certeza que deseja excluir esta conta de portaria? O acesso dela será revogado imediatamente.')) return;
+    try {
+      const token = localStorage.getItem('token');
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3333/api';
+      const res = await fetch(`${apiUrl}/users/porteiros/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        setPorteiros(prev => prev.filter(p => p.id !== id));
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Erro ao excluir');
+      }
+    } catch (e) {
+      alert('Erro de conexão');
+    }
+  };
+
   const filteredEvents = events.filter(evt => {
     if (!dateFilter) return true;
     const evtDate = new Date(evt.date).toISOString().split('T')[0];
@@ -183,6 +254,12 @@ export default function OrganizadorDashboard() {
             onChange={e => setDateFilter(e.target.value)}
             style={{ padding: '0.75rem', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-glass)', color: 'white' }}
           />
+          <button className="btn btn-secondary" onClick={openPortariaModal}>
+            Gerenciar Equipe
+          </button>
+          <button className="btn btn-secondary" onClick={() => router.push('/portaria')}>
+            Ler QR Code
+          </button>
           <button className="btn btn-primary" onClick={() => setIsEventModalOpen(true)}>
             + Criar Evento
           </button>
@@ -354,6 +431,56 @@ export default function OrganizadorDashboard() {
                 </button>
               </form>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Modal Gerenciar Portaria */}
+      {isPortariaModalOpen && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999 }}>
+          <div className="glass-panel" style={{ padding: '2rem', width: '100%', maxWidth: '500px', maxHeight: '90vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h3 className="neon-text">Gerenciar Equipe (Portaria)</h3>
+              <button onClick={() => setIsPortariaModalOpen(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '1.2rem' }}>&times;</button>
+            </div>
+            
+            <div style={{ marginBottom: '2rem' }}>
+              <h4 style={{ marginBottom: '1rem', borderBottom: '1px solid var(--border-glass)', paddingBottom: '0.5rem' }}>Contas Ativas</h4>
+              {loadingPorteiros ? <p>Carregando...</p> : porteiros.length === 0 ? <p className="text-secondary" style={{ fontSize: '0.8rem' }}>Nenhuma conta criada ainda.</p> : (
+                <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  {porteiros.map(p => (
+                    <li key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.3)', padding: '0.75rem', borderRadius: '8px' }}>
+                      <div>
+                        <span style={{ display: 'block', fontWeight: 'bold' }}>{p.name}</span>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{p.email}</span>
+                      </div>
+                      <button onClick={() => handleDeletePorteiro(p.id)} style={{ background: 'transparent', border: 'none', color: 'var(--danger)', cursor: 'pointer', fontSize: '1.2rem' }} title="Revogar acesso">
+                        🗑️
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            <h4 style={{ marginBottom: '1rem', borderBottom: '1px solid var(--border-glass)', paddingBottom: '0.5rem' }}>Cadastrar Novo Membro</h4>
+            <form onSubmit={handleCreatePortaria} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '0.5rem' }}>Nome (Ex: "Equipe Setor A")</label>
+                <input required type="text" value={portariaData.name} onChange={e => setPortariaData({...portariaData, name: e.target.value})} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-glass)', color: 'white' }} />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '0.5rem' }}>E-mail de Login</label>
+                <input required type="email" value={portariaData.email} onChange={e => setPortariaData({...portariaData, email: e.target.value})} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-glass)', color: 'white' }} />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '0.5rem' }}>Senha de Acesso</label>
+                <input required type="text" value={portariaData.password} onChange={e => setPortariaData({...portariaData, password: e.target.value})} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-glass)', color: 'white' }} />
+              </div>
+              <button type="submit" className="btn btn-primary" disabled={creatingPortaria} style={{ marginTop: '1rem' }}>
+                {creatingPortaria ? 'Criando...' : '+ Cadastrar e Liberar Acesso'}
+              </button>
+            </form>
           </div>
         </div>
       )}

@@ -53,7 +53,7 @@ export default async function Header() {
                 {session.role === 'SUPER_ADMIN' && (
                   <Link href="/super-admin" className={styles.navLink}>Painel Super Admin</Link>
                 )}
-                {session.role === 'PORTARIA' && (
+                {(session.role === 'PORTARIA' || session.role === 'ORGANIZER' || session.role === 'SUPER_ADMIN') && (
                   <Link href="/portaria" className={styles.navLink}>Portaria</Link>
                 )}
               </>
