@@ -24,7 +24,10 @@ export class EventService {
       body: JSON.stringify({ id, status }),
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Erro ao atualizar status');
+    if (!res.ok) {
+      const details = data.details ? JSON.stringify(data.details) : '';
+      throw new Error(`${data.error || 'Erro ao atualizar status'} ${details}`);
+    }
     return data.event;
   }
 
