@@ -37,7 +37,7 @@ export default async function Home() {
       acc[key] = event; // Guarda apenas a primeira ocorrência
     }
     return acc;
-  }, {}));
+  }, {})) as any[];
 
   const featuredEvents = groupedEvents.slice(0, 4); // Top 4 para o carrossel
   const movies = groupedEvents.filter((e: any) => e.type === 'MOVIE');
