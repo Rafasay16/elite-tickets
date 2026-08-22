@@ -6,7 +6,6 @@ import { getSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { CalendarIcon, MapPinIcon, TicketIcon } from "@/components/Icons";
 import styles from "./page.module.css";
-import QRCodeBlock from "@/components/QRCodeBlock";
 import TicketCard from "@/components/TicketCard";
 
 export const dynamic = 'force-dynamic';
