@@ -20,7 +20,7 @@ export const eventSchema = {
   updateStatus: z.object({
     body: z.object({
       id: z.string().uuid('ID inválido'),
-      status: z.enum(['PUBLISHED', 'DRAFT', 'CANCELLED']).optional(),
+      status: z.enum(['PUBLISHED', 'DRAFT', 'CANCELLED', 'PAUSED']).optional(),
       title: z.string().optional(),
       description: z.string().optional(),
       category: z.string().optional(),
