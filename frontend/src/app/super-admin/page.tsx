@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { AdminService } from '@/services/AdminService';
-import { maskCPF, maskCNPJ } from '@/utils/masks';
+import { maskCPF, maskCNPJ, maskInteger } from '@/utils/masks';
 
 type Organizer = {
   id: string;
@@ -257,9 +257,12 @@ export default function SuperAdminPage() {
                 <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '0.5rem' }}>Taxa de Serviço (%)</label>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <input 
-                    type="number" step="1" min="0" max="100" required 
+                    type="text" required 
                     value={Math.round(feeRate * 100)} 
-                    onChange={e => setFeeRate(Number(e.target.value) / 100)}
+                    onChange={e => {
+                      const val = Number(maskInteger(e.target.value));
+                      if (val <= 100) setFeeRate(val / 100);
+                    }}
                     style={{ flex: 1, padding: '0.75rem', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-glass)', color: 'white' }}
                   />
                   <span>%</span>
@@ -269,9 +272,9 @@ export default function SuperAdminPage() {
               <div>
                 <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '0.5rem' }}>Limite de Eventos Publicados</label>
                 <input 
-                  type="number" step="1" min="1" required 
-                  value={eventLimit} 
-                  onChange={e => setEventLimit(Number(e.target.value))}
+                  type="text" required 
+                  value={eventLimit === 0 ? '' : eventLimit} 
+                  onChange={e => setEventLimit(Number(maskInteger(e.target.value)))}
                   style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-glass)', color: 'white' }}
                 />
               </div>
