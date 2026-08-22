@@ -166,8 +166,8 @@ export default function OrganizadorDashboard() {
     try {
       await EventService.toggleStatus(id, newStatus);
       fetchEvents();
-    } catch (e) {
-      alert('Erro ao alterar status');
+    } catch (e: any) {
+      alert(`Erro ao alterar status: ${e.message}`);
     }
   };
 
