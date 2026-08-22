@@ -96,10 +96,10 @@ function LoginForm() {
           <div className={styles.demoAccounts}>
             <p>Contas de Demonstração (Portfólio):</p>
             <div className={styles.demoButtons}>
-              <button type="button" onClick={() => handleDemoFill('client')} className="btn">
+              <button type="button" onClick={() => handleDemoFill('client')} className="btn btn-secondary">
                 Preencher Cliente
               </button>
-              <button type="button" onClick={() => handleDemoFill('admin')} className="btn" style={{ borderColor: 'var(--accent-neon-glow)'}}>
+              <button type="button" onClick={() => handleDemoFill('admin')} className="btn btn-secondary" style={{ borderColor: 'var(--accent-neon-glow)'}}>
                 Preencher Admin
               </button>
             </div>
