@@ -59,6 +59,19 @@ export class CheckoutService {
     return { success: true };
   }
 
+  static async getSharedTicket(id: string, userId: string) {
+    const reservation = await prisma.reservation.findUnique({
+      where: { id },
+      include: { seat: true, event: true, user: { select: { name: true, email: true } } }
+    });
+
+    if (!reservation) throw new Error('Ingresso não encontrado');
+    if (reservation.userId !== userId) throw new Error('Ingresso não encontrado ou acesso negado');
+    if (reservation.status !== 'PAID' && reservation.status !== 'USED') throw new Error('Ingresso não está válido');
+
+    return reservation;
+  }
+
   static async validateTicket(data: any, userId: string) {
     const { qrCode, eventId } = data;
     if (!qrCode || !eventId) throw new Error('Faltam dados: qrCode ou eventId');
