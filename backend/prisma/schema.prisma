@@ -27,6 +27,7 @@ model User {
   creatorId    String? // Vincula o Porteiro ao Organizador que o criou
   reservations Reservation[]
   events       Event[]       @relation("OrganizerEvents") // Apenas para ORGANIZER
+  scannedReservations Reservation[] @relation("ScannedReservations")
 }
 
 model Event {
@@ -74,7 +75,11 @@ model Reservation {
   expiresAt DateTime? // Tempo limite para pagar
   createdAt DateTime  @default(now())
 
+  scannedAt DateTime?
+  scannedById String?
+
   user  User  @relation(fields: [userId], references: [id])
   event Event @relation(fields: [eventId], references: [id])
   seat  Seat  @relation(fields: [seatId], references: [id])
+  scannedBy User? @relation("ScannedReservations", fields: [scannedById], references: [id])
 }

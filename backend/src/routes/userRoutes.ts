@@ -17,5 +17,7 @@ router.put('/profile', validate(userSchema.updateProfile), UserController.update
 router.post('/porteiros', roleMiddleware(['ORGANIZER', 'SUPER_ADMIN']), validate(userSchema.createPorteiro), UserController.createPorteiro);
 router.get('/porteiros', roleMiddleware(['ORGANIZER', 'SUPER_ADMIN']), UserController.getPorteiros);
 router.delete('/porteiros/:id', roleMiddleware(['ORGANIZER', 'SUPER_ADMIN']), UserController.deletePorteiro);
+router.put('/porteiros/:id/password', roleMiddleware(['ORGANIZER', 'SUPER_ADMIN']), UserController.resetPorteiroPassword);
+router.get('/porteiros/:id/logs', roleMiddleware(['ORGANIZER', 'SUPER_ADMIN']), UserController.getPorteiroLogs);
 
 export default router;

@@ -80,4 +80,25 @@ export class UserController {
       return res.status(500).json({ error: error.message });
     }
   }
+
+  static async resetPorteiroPassword(req: AuthRequest, res: Response) {
+    try {
+      const { password } = req.body;
+      if (!password) return res.status(400).json({ error: 'A nova senha é obrigatória.' });
+      
+      await UserService.resetPorteiroPassword(req.params.id as string, password, req.user.id);
+      return res.json({ success: true });
+    } catch (error: any) {
+      return res.status(403).json({ error: error.message });
+    }
+  }
+
+  static async getPorteiroLogs(req: AuthRequest, res: Response) {
+    try {
+      const logs = await UserService.getPorteiroLogs(req.params.id as string, req.user.id);
+      return res.json(logs);
+    } catch (error: any) {
+      return res.status(403).json({ error: error.message });
+    }
+  }
 }

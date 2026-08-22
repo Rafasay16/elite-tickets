@@ -1,5 +1,6 @@
 import prisma from '../models/prisma';
 import QRCode from 'qrcode';
+import jwt from 'jsonwebtoken';
 
 export class CheckoutService {
   static async reserve(data: any, userId: string) {
@@ -40,7 +41,9 @@ export class CheckoutService {
     }
     if (reservation.status === 'PAID') throw new Error('Já pago');
 
-    const qrData = JSON.stringify({ reservationId, userId, timestamp: Date.now() });
+    const payload = { reservationId, userId, timestamp: Date.now() };
+    const secret = process.env.JWT_SECRET || 'fallback-secret-for-dev-only-123';
+    const qrData = jwt.sign(payload, secret);
     const qrCodeUrl = await QRCode.toDataURL(qrData);
 
     await prisma.reservation.update({
@@ -60,28 +63,22 @@ export class CheckoutService {
     const { qrCode, eventId } = data;
     if (!qrCode || !eventId) throw new Error('Faltam dados: qrCode ou eventId');
 
-    let searchId = qrCode;
-    if (qrCode.startsWith('{')) {
-      try {
-        const parsed = JSON.parse(qrCode);
-        searchId = parsed.reservationId;
-      } catch(e) {}
+    let searchId: string;
+    const secret = process.env.JWT_SECRET || 'fallback-secret-for-dev-only-123';
+    
+    try {
+      const decoded: any = jwt.verify(qrCode, secret);
+      searchId = decoded.reservationId;
+    } catch (err) {
+      throw new Error('QR Code inválido ou forjado');
     }
     
     searchId = searchId.replace('#', '').toLowerCase();
-    let reservation = null;
 
-    if (searchId.length < 36) {
-      reservation = await prisma.reservation.findFirst({
-        where: { id: { startsWith: searchId } },
-        include: { seat: true, event: true }
-      });
-    } else {
-      reservation = await prisma.reservation.findUnique({
-        where: { id: searchId },
-        include: { seat: true, event: true }
-      });
-    }
+    const reservation = await prisma.reservation.findUnique({
+      where: { id: searchId },
+      include: { seat: true, event: true }
+    });
 
     if (!reservation) throw new Error('Inválido');
     if (reservation.eventId !== eventId) throw new Error('Evento errado');
@@ -90,7 +87,7 @@ export class CheckoutService {
 
     await prisma.reservation.update({
       where: { id: reservation.id },
-      data: { status: 'USED' }
+      data: { status: 'USED', scannedAt: new Date(), scannedById: userId }
     });
 
     return `Assento: Fila ${reservation.seat.row} - Num ${reservation.seat.number}`;

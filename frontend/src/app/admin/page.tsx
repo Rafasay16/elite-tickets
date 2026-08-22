@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { CalendarIcon, MapPinIcon } from '@/components/Icons';
+import { CalendarIcon, MapPinIcon, GearIcon, TrashIcon } from '@/components/Icons';
 import { EventService } from '@/services/EventService';
 
 type Event = {
@@ -24,7 +24,12 @@ export default function OrganizadorDashboard() {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [dateFilter, setDateFilter] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
   const router = useRouter();
+
+  // Modal Calendario
+  const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false);
+  const [calendarMonth, setCalendarMonth] = useState(new Date());
 
   // Modal Novo Evento
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
@@ -49,6 +54,12 @@ export default function OrganizadorDashboard() {
   const [portariaData, setPortariaData] = useState({ name: '', email: '', password: 'eliteportaria' });
   const [creatingPortaria, setCreatingPortaria] = useState(false);
   const [loadingPorteiros, setLoadingPorteiros] = useState(false);
+
+  // Settings da Portaria
+  const [selectedPorteiroForSettings, setSelectedPorteiroForSettings] = useState<any>(null);
+  const [newPorteiroPassword, setNewPorteiroPassword] = useState('');
+  const [porteiroLogs, setPorteiroLogs] = useState<any[]>([]);
+  const [loadingLogs, setLoadingLogs] = useState(false);
 
   useEffect(() => {
     fetchEvents();
@@ -234,11 +245,129 @@ export default function OrganizadorDashboard() {
     }
   };
 
+  const openPorteiroSettings = async (porteiro: any) => {
+    setSelectedPorteiroForSettings(porteiro);
+    setNewPorteiroPassword('');
+    setPorteiroLogs([]);
+    setLoadingLogs(true);
+    
+    try {
+      const token = localStorage.getItem('token');
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3333/api';
+      const res = await fetch(`${apiUrl}/users/porteiros/${porteiro.id}/logs`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setPorteiroLogs(data);
+      }
+    } catch(e) {}
+    setLoadingLogs(false);
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPorteiroPassword) return;
+    
+    try {
+      const token = localStorage.getItem('token');
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3333/api';
+      const res = await fetch(`${apiUrl}/users/porteiros/${selectedPorteiroForSettings.id}/password`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ password: newPorteiroPassword })
+      });
+      if (res.ok) {
+        alert('Senha redefinida com sucesso!');
+        setNewPorteiroPassword('');
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Erro ao redefinir senha');
+      }
+    } catch(e) {
+      alert('Erro de conexão');
+    }
+  };
+
+  const getDaysInMonth = (year: number, month: number) => new Date(year, month + 1, 0).getDate();
+  const getFirstDayOfMonth = (year: number, month: number) => new Date(year, month, 1).getDay();
+  const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+
+  const prevMonth = () => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1));
+  const nextMonth = () => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1));
+
+  const renderCalendar = () => {
+    const year = calendarMonth.getFullYear();
+    const month = calendarMonth.getMonth();
+    const daysInMonth = getDaysInMonth(year, month);
+    const firstDay = getFirstDayOfMonth(year, month);
+    
+    const days = [];
+    for (let i = 0; i < firstDay; i++) {
+      days.push(<div key={`empty-${i}`} style={{ padding: '0.75rem' }} />);
+    }
+    
+    for (let i = 1; i <= daysInMonth; i++) {
+      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+      const isSelected = dateFilter === dateStr;
+      
+      days.push(
+        <button 
+          key={i} 
+          onClick={() => { setDateFilter(dateStr); setIsCalendarModalOpen(false); }}
+          style={{
+            padding: '0.5rem',
+            background: isSelected ? 'var(--accent-neon)' : 'rgba(255,255,255,0.05)',
+            color: isSelected ? '#000' : 'white',
+            border: 'none',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            fontWeight: isSelected ? 'bold' : 'normal',
+            transition: 'all 0.2s',
+            aspectRatio: '1/1',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+          onMouseOver={e => {
+            if (!isSelected) e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
+          }}
+          onMouseOut={e => {
+            if (!isSelected) e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+          }}
+        >
+          {i}
+        </button>
+      );
+    }
+    
+    return days;
+  };
+
   const filteredEvents = events.filter(evt => {
-    if (!dateFilter) return true;
-    const evtDate = new Date(evt.date).toISOString().split('T')[0];
-    return evtDate === dateFilter;
+    let matchesDate = true;
+    let matchesCategory = true;
+    
+    if (dateFilter) {
+      const evtDate = new Date(evt.date).toISOString().split('T')[0];
+      matchesDate = evtDate === dateFilter;
+    }
+    
+    if (categoryFilter) {
+      matchesCategory = (evt.category || 'Geral') === categoryFilter;
+    }
+    
+    return matchesDate && matchesCategory;
   });
+
+  const categories = Array.from(new Set(events.map(e => e.category || 'Geral')));
+
+  const groupedEvents = filteredEvents.reduce((acc, evt) => {
+    const cat = evt.category || 'Geral';
+    if (!acc[cat]) acc[cat] = [];
+    acc[cat].push(evt);
+    return acc;
+  }, {} as Record<string, Event[]>);
 
   return (
     <main className="container" style={{ padding: '4rem 1.5rem' }}>
@@ -248,12 +377,51 @@ export default function OrganizadorDashboard() {
           <p className="text-secondary">Crie, pause e emita cortesias para os seus eventos.</p>
         </div>
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-          <input 
-            type="date" 
-            value={dateFilter} 
-            onChange={e => setDateFilter(e.target.value)}
-            style={{ padding: '0.75rem', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-glass)', color: 'white' }}
-          />
+          <select 
+            value={categoryFilter} 
+            onChange={e => setCategoryFilter(e.target.value)}
+            className="btn btn-secondary"
+            style={{ 
+              cursor: 'pointer',
+              appearance: 'none',
+              WebkitAppearance: 'none',
+              paddingRight: '2.5rem',
+              backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23f8fafc' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
+              backgroundRepeat: 'no-repeat',
+              backgroundPosition: 'right 1rem center',
+              backgroundSize: '1em'
+            }}
+          >
+            <option value="" style={{ background: '#0f172a', color: 'white' }}>Todas as Categorias</option>
+            {categories.map(cat => (
+              <option key={cat} value={cat} style={{ background: '#0f172a', color: 'white' }}>{cat}</option>
+            ))}
+          </select>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <button 
+              className="btn btn-secondary" 
+              onClick={() => setIsCalendarModalOpen(true)}
+              style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '0.5rem', 
+                background: dateFilter ? 'var(--accent-neon)' : undefined, 
+                color: dateFilter ? '#000' : undefined 
+              }}
+            >
+              <CalendarIcon />
+              {dateFilter ? new Date(dateFilter + 'T12:00:00').toLocaleDateString('pt-BR') : 'Filtrar por Data'}
+            </button>
+            {dateFilter && (
+              <button 
+                onClick={() => setDateFilter('')}
+                style={{ background: 'transparent', border: 'none', color: 'var(--danger)', cursor: 'pointer', fontSize: '1.5rem', padding: '0 0.5rem', marginLeft: '0.2rem' }}
+                title="Limpar data"
+              >
+                &times;
+              </button>
+            )}
+          </div>
           <button className="btn btn-secondary" onClick={openPortariaModal}>
             Gerenciar Equipe
           </button>
@@ -267,52 +435,60 @@ export default function OrganizadorDashboard() {
       </div>
 
       {loading ? <p>Carregando...</p> : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
-          {filteredEvents.map(evt => {
-            const isPaused = evt.status === 'PAUSED';
-            return (
-              <div key={evt.id} className="glass-panel" style={{ padding: '1.5rem', opacity: isPaused ? 0.6 : 1, position: 'relative' }}>
-                {isPaused && (
-                  <span style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'var(--danger)', color: 'white', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 'bold' }}>
-                    PAUSADO
-                  </span>
-                )}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <h3 style={{ marginBottom: '0.5rem', paddingRight: '4rem' }}>{evt.title}</h3>
-                </div>
-                <span style={{ display: 'inline-block', padding: '0.2rem 0.5rem', background: 'rgba(255,255,255,0.1)', borderRadius: '4px', fontSize: '0.75rem', marginBottom: '1rem' }}>
-                  {evt.category || 'Geral'}
-                </span>
-                
-                <p className="text-secondary" style={{ fontSize: '0.875rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'center' }}>
-                  <MapPinIcon /> {evt.location}
-                </p>
-                <p className="text-secondary" style={{ fontSize: '0.875rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center' }}>
-                  <CalendarIcon /> {new Date(evt.date).toLocaleString('pt-BR')}
-                </p>
-                
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <button 
-                    className="btn btn-primary" 
-                    style={{ flex: 1, padding: '0.5rem', fontSize: '0.8rem' }}
-                    onClick={() => openCortesiaModal(evt.id)}
-                    disabled={isPaused}
-                  >
-                    Cortesias
-                  </button>
-                  <button 
-                    className="btn btn-secondary" 
-                    style={{ flex: 1, padding: '0.5rem', fontSize: '0.8rem' }}
-                    onClick={() => toggleEventStatus(evt.id, evt.status)}
-                  >
-                    {isPaused ? 'Publicar' : 'Pausar'}
-                  </button>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+          {Object.entries(groupedEvents).length === 0 ? (
+            <p className="text-secondary">Nenhum evento encontrado.</p>
+          ) : (
+            Object.entries(groupedEvents).map(([category, catEvents]) => (
+              <div key={category}>
+                <h2 style={{ marginBottom: '1rem', borderBottom: '1px solid var(--border-glass)', paddingBottom: '0.5rem', color: 'var(--text-primary)', fontSize: '1.25rem' }}>{category}</h2>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
+                  {catEvents.map(evt => {
+                    const isPaused = evt.status === 'PAUSED';
+                    return (
+                      <div key={evt.id} className="glass-panel" style={{ padding: '1.5rem', opacity: isPaused ? 0.6 : 1, position: 'relative' }}>
+                        {isPaused && (
+                          <span style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'var(--danger)', color: 'white', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 'bold' }}>
+                            PAUSADO
+                          </span>
+                        )}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                          <h3 style={{ marginBottom: '0.5rem', paddingRight: '4rem' }}>{evt.title}</h3>
+                        </div>
+                        <span style={{ display: 'inline-block', padding: '0.2rem 0.5rem', background: 'rgba(255,255,255,0.1)', borderRadius: '4px', fontSize: '0.75rem', marginBottom: '1rem' }}>
+                          {evt.category || 'Geral'}
+                        </span>
+                        
+                        <p className="text-secondary" style={{ fontSize: '0.875rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'center' }}>
+                          <MapPinIcon /> {evt.location}
+                        </p>
+                        <p className="text-secondary" style={{ fontSize: '0.875rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center' }}>
+                          <CalendarIcon /> {new Date(evt.date).toLocaleString('pt-BR')}
+                        </p>
+                        
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <button 
+                            className="btn btn-primary" 
+                            style={{ flex: 1, padding: '0.5rem', fontSize: '0.8rem' }}
+                            onClick={() => openCortesiaModal(evt.id)}
+                            disabled={isPaused}
+                          >
+                            Cortesias
+                          </button>
+                          <button 
+                            className="btn btn-secondary" 
+                            style={{ flex: 1, padding: '0.5rem', fontSize: '0.8rem' }}
+                            onClick={() => toggleEventStatus(evt.id, evt.status)}
+                          >
+                            {isPaused ? 'Publicar' : 'Pausar'}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
-            );
-          })}
-          {filteredEvents.length === 0 && (
-            <p className="text-secondary" style={{ gridColumn: '1 / -1' }}>Nenhum evento encontrado.</p>
+            ))
           )}
         </div>
       )}
@@ -454,9 +630,14 @@ export default function OrganizadorDashboard() {
                         <span style={{ display: 'block', fontWeight: 'bold' }}>{p.name}</span>
                         <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{p.email}</span>
                       </div>
-                      <button onClick={() => handleDeletePorteiro(p.id)} style={{ background: 'transparent', border: 'none', color: 'var(--danger)', cursor: 'pointer', fontSize: '1.2rem' }} title="Revogar acesso">
-                        🗑️
-                      </button>
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <button onClick={() => openPorteiroSettings(p)} style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', padding: '0.2rem' }} title="Configurações">
+                          <GearIcon size={20} />
+                        </button>
+                        <button onClick={() => handleDeletePorteiro(p.id)} style={{ background: 'transparent', border: 'none', color: 'var(--danger)', cursor: 'pointer', padding: '0.2rem' }} title="Revogar acesso">
+                          <TrashIcon size={20} />
+                        </button>
+                      </div>
                     </li>
                   ))}
                 </ul>
@@ -478,9 +659,84 @@ export default function OrganizadorDashboard() {
                 <input required type="text" value={portariaData.password} onChange={e => setPortariaData({...portariaData, password: e.target.value})} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-glass)', color: 'white' }} />
               </div>
               <button type="submit" className="btn btn-primary" disabled={creatingPortaria} style={{ marginTop: '1rem' }}>
-                {creatingPortaria ? 'Criando...' : '+ Cadastrar e Liberar Acesso'}
+                {creatingPortaria ? 'Criando...' : 'Cadastrar e Liberar Acesso'}
               </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Configurações do Porteiro */}
+      {selectedPorteiroForSettings && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div className="glass-panel" style={{ padding: '2rem', width: '100%', maxWidth: '500px', maxHeight: '90vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h3 className="neon-text">Gerenciar: {selectedPorteiroForSettings.name}</h3>
+              <button onClick={() => setSelectedPorteiroForSettings(null)} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '1.2rem' }}>&times;</button>
+            </div>
+
+            <div style={{ marginBottom: '2rem' }}>
+              <h4 style={{ marginBottom: '1rem', borderBottom: '1px solid var(--border-glass)', paddingBottom: '0.5rem' }}>Redefinir Senha</h4>
+              <form onSubmit={handleResetPassword} style={{ display: 'flex', gap: '0.5rem' }}>
+                <input required type="text" placeholder="Nova senha" value={newPorteiroPassword} onChange={e => setNewPorteiroPassword(e.target.value)} style={{ flex: 1, padding: '0.75rem', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-glass)', color: 'white' }} />
+                <button type="submit" className="btn btn-primary">Salvar</button>
+              </form>
+            </div>
+
+            <div>
+              <h4 style={{ marginBottom: '1rem', borderBottom: '1px solid var(--border-glass)', paddingBottom: '0.5rem' }}>Últimas Validações</h4>
+              {loadingLogs ? <p>Carregando histórico...</p> : porteiroLogs.length === 0 ? <p className="text-secondary" style={{ fontSize: '0.8rem' }}>Nenhum ingresso bipado ainda.</p> : (
+                <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '200px', overflowY: 'auto' }}>
+                  {porteiroLogs.map((log: any) => (
+                    <li key={log.id} style={{ background: 'rgba(0,0,0,0.3)', padding: '0.75rem', borderRadius: '8px', fontSize: '0.8rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                        <span style={{ fontWeight: 'bold' }}>{log.event?.title}</span>
+                        <span style={{ color: 'var(--accent-neon)' }}>{new Date(log.scannedAt).toLocaleTimeString('pt-BR')}</span>
+                      </div>
+                      <div style={{ color: 'var(--text-secondary)' }}>
+                        Fila {log.seat?.row} - Num {log.seat?.number}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Calendário */}
+      {isCalendarModalOpen && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div className="glass-panel" style={{ padding: '2rem', width: '100%', maxWidth: '400px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h3 className="neon-text">Filtrar por Data</h3>
+              <button onClick={() => setIsCalendarModalOpen(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '1.2rem' }}>&times;</button>
+            </div>
+            
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <button onClick={prevMonth} className="btn btn-secondary" style={{ padding: '0.5rem 1rem' }}>&lt;</button>
+              <h4 style={{ margin: 0 }}>{monthNames[calendarMonth.getMonth()]} {calendarMonth.getFullYear()}</h4>
+              <button onClick={nextMonth} className="btn btn-secondary" style={{ padding: '0.5rem 1rem' }}>&gt;</button>
+            </div>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '0.5rem', textAlign: 'center', marginBottom: '0.5rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+              <div>Dom</div><div>Seg</div><div>Ter</div><div>Qua</div><div>Qui</div><div>Sex</div><div>Sáb</div>
+            </div>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '0.5rem' }}>
+              {renderCalendar()}
+            </div>
+            
+            <div style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'center' }}>
+              <button 
+                className="btn btn-secondary" 
+                onClick={() => { setDateFilter(''); setIsCalendarModalOpen(false); }}
+                style={{ width: '100%' }}
+              >
+                Limpar Filtro
+              </button>
+            </div>
           </div>
         </div>
       )}

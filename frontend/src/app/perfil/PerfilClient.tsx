@@ -28,12 +28,12 @@ export default function PerfilClient({ initialProfile, sessionToken }: { initial
     newPassword: '',
   });
 
-  const [preferences, setPreferences] = useState(() => {
+  const [preferences, setPreferences] = useState<{newsletter: boolean, sms: boolean}>(() => {
     try { return JSON.parse(initialProfile.preferences) || { newsletter: true, sms: false }; }
     catch { return { newsletter: true, sms: false }; }
   });
 
-  const [paymentMock, setPaymentMock] = useState(() => {
+  const [paymentMock, setPaymentMock] = useState<{cardNumber: string, name: string, expiry: string}>(() => {
     try { return JSON.parse(initialProfile.paymentMock) || { cardNumber: '**** **** **** 1234', name: initialProfile.name, expiry: '12/29' }; }
     catch { return { cardNumber: '**** **** **** 1234', name: initialProfile.name, expiry: '12/29' }; }
   });
@@ -167,7 +167,7 @@ export default function PerfilClient({ initialProfile, sessionToken }: { initial
                   <div className="text-secondary" style={{ fontSize: '0.85rem' }}>Expira em {paymentMock.expiry}</div>
                 </div>
               </div>
-              <button className="btn" style={{ background: 'transparent', border: '1px solid var(--border-glass)' }}>Remover</button>
+              <button className="btn btn-secondary" style={{ color: 'var(--danger)', borderColor: 'rgba(220, 38, 38, 0.3)' }}>Remover</button>
             </div>
             <button className="btn btn-primary" style={{ marginTop: '1.5rem', width: '100%' }}>+ Adicionar Novo Cartão Simulado</button>
           </div>

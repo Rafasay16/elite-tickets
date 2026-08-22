@@ -2,7 +2,7 @@ import { fetchApi } from '../lib/api';
 
 export class CheckoutService {
   static async reserve(eventId: string, seatId: string) {
-    const res = await fetchApi('/checkout', {
+    const res = await fetchApi('/checkout/reserve', {
       method: 'POST',
       body: JSON.stringify({ eventId, seatId }),
     });
