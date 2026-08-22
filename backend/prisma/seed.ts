@@ -152,7 +152,7 @@ async function main() {
     const eventCities = new Set<string>();
     eventCities.add('Campina Grande');
     while (eventCities.size < numCities) {
-      eventCities.add(uniqueCities[Math.floor(Math.random() * uniqueCities.length)]);
+      eventCities.add(uniqueCities[Math.floor(Math.random() * uniqueCities.length)]!);
     }
 
     for (const city of eventCities) {
