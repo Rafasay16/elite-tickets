@@ -1,4 +1,16 @@
-# Elite Tickets
+# Elite Tickets 🎟️
+
+A fullstack event ticketing application with real-time QR Code validation, seat reservation, and an awesome dynamic UI.
+
+## 🚀 Live Demo
+- **Frontend:** [https://elite-tickets-vlr.vercel.app/](https://elite-tickets-vlr.vercel.app/)
+- **API / Backend:** [https://elite-tickets-api-uiqi.onrender.com](https://elite-tickets-api-uiqi.onrender.com)
+
+## 🛠️ Stack
+- **Frontend:** Next.js 14, Tailwind CSS, Lucide React
+- **Backend:** Node.js, Express, Prisma ORM
+- **Database:** PostgreSQL (Supabase)
+- **Hosting:** Vercel (Front) & Render (Back)
 
 Elite Tickets is a comprehensive, full-stack ticketing platform designed for cinemas, concerts, and festivals. It provides an end-to-end solution for event management, ticket purchasing, and access control.
 
