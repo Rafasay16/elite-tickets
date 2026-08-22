@@ -511,7 +511,26 @@ export default function OrganizadorDashboard() {
               <div style={{ display: 'flex', gap: '1rem' }}>
                 <div style={{ flex: 1 }}>
                   <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '0.5rem' }}>Categoria</label>
-                  <select required value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', backgroundColor: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-glass)', color: 'white' }}>
+                  <select 
+                    required 
+                    value={formData.category} 
+                    onChange={e => setFormData({...formData, category: e.target.value})} 
+                    style={{ 
+                      width: '100%', 
+                      padding: '0.75rem', 
+                      paddingRight: '2.5rem',
+                      borderRadius: '8px', 
+                      backgroundColor: 'rgba(0,0,0,0.3)', 
+                      border: '1px solid var(--border-glass)', 
+                      color: 'white',
+                      appearance: 'none',
+                      WebkitAppearance: 'none',
+                      backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23f8fafc' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
+                      backgroundRepeat: 'no-repeat',
+                      backgroundPosition: 'right 0.75rem center',
+                      backgroundSize: '1em'
+                    }}
+                  >
                     <option value="Show">Show</option>
                     <option value="Teatro">Teatro</option>
                     <option value="Cinema">Cinema</option>
