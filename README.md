@@ -97,6 +97,22 @@ npm run dev
 
 This will use `concurrently` to launch both the backend API and the frontend client. The frontend will be available at `http://localhost:3000` and the backend API at `http://localhost:3333`.
 
+## Dados de Teste
+
+O projeto inclui dados iniciais (semeados) com eventos publicados e ingressos disponiveis, para que seja possivel testar o fluxo completo de compra e gerenciamento sem precisar configurar tudo do zero.
+
+Contas de acesso para teste:
+
+- **Clientes:** 
+  - `rafinha@gmail.com` / `123456`
+  - `rafael@gmail.com` / `123456`
+- **Organizador:** 
+  - `admin@admin.com` / `123456`
+- **Portaria:** 
+  - `porteiro1@gmail.com` / `123456`
+- **Super Admin:** 
+  - `superadmin@elite.com` / `123456`
+
 ## Database Management
 
 You can inspect and manage the database using Prisma Studio directly from the root directory:

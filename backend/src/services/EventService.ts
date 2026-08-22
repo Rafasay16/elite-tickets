@@ -1,5 +1,6 @@
 import prisma from '../models/prisma';
 import QRCode from 'qrcode';
+import jwt from 'jsonwebtoken';
 
 export class EventService {
   static async listAll(city?: string) {
@@ -127,19 +128,25 @@ export class EventService {
 
     await prisma.seat.update({ where: { id: seatId }, data: { status: 'CORTESIA' } });
 
-    const qrData = JSON.stringify({ eventId, seatId, guestName, cortesia: true, timestamp: Date.now() });
-    const qrCodeUrl = await QRCode.toDataURL(qrData);
-
     const reservation = await prisma.reservation.create({
       data: {
         userId: organizerId, // Assuming organizer generates it
         eventId,
         seatId,
-        status: 'PAID',
-        qrCodeUrl
+        status: 'PAID'
       }
     });
 
-    return reservation;
+    const payload = { reservationId: reservation.id, eventId, seatId, guestName, cortesia: true, timestamp: Date.now() };
+    const secret = process.env.JWT_SECRET || 'fallback-secret-for-dev-only-123';
+    const qrData = jwt.sign(payload, secret);
+    const qrCodeUrl = await QRCode.toDataURL(qrData);
+
+    const updatedReservation = await prisma.reservation.update({
+      where: { id: reservation.id },
+      data: { qrCodeUrl }
+    });
+
+    return updatedReservation;
   }
 }

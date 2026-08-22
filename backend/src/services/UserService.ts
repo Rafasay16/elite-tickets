@@ -107,7 +107,7 @@ export class UserService {
         role: 'PORTARIA',
         creatorId
       },
-      select: { id: true, name: true, email: true, createdAt: true }
+      select: { id: true, name: true, email: true }
     });
     return porteiros;
   }
@@ -121,5 +121,36 @@ export class UserService {
 
     await prisma.user.delete({ where: { id } });
     return { success: true };
+  }
+
+  static async resetPorteiroPassword(id: string, newPassword: string, creatorId: string) {
+    const porteiro = await prisma.user.findUnique({ where: { id } });
+    if (!porteiro || porteiro.creatorId !== creatorId) {
+      throw new Error('Permissão negada ou usuário não encontrado.');
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await prisma.user.update({
+      where: { id },
+      data: { password: hashedPassword }
+    });
+    return { success: true };
+  }
+
+  static async getPorteiroLogs(id: string, creatorId: string) {
+    const porteiro = await prisma.user.findUnique({ where: { id } });
+    if (!porteiro || porteiro.creatorId !== creatorId) {
+      throw new Error('Permissão negada ou usuário não encontrado.');
+    }
+
+    const logs = await prisma.reservation.findMany({
+      where: { scannedById: id },
+      include: {
+        event: { select: { title: true } },
+        seat: { select: { row: true, number: true } }
+      },
+      orderBy: { scannedAt: 'desc' }
+    });
+    return logs;
   }
 }

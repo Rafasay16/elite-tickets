@@ -8,6 +8,8 @@ const router = Router();
 
 router.use(authMiddleware);
 
+router.get('/shared/ticket/:id', CheckoutController.getSharedTicket);
+
 router.post('/reserve', roleMiddleware(['CLIENT', 'ORGANIZER', 'SUPER_ADMIN']), validate(checkoutSchema.reserve), CheckoutController.reserve);
 router.post('/confirm', roleMiddleware(['CLIENT', 'ORGANIZER', 'SUPER_ADMIN']), validate(checkoutSchema.confirm), CheckoutController.confirm);
 router.post('/validate', roleMiddleware(['ORGANIZER', 'SUPER_ADMIN', 'PORTARIA']), validate(checkoutSchema.validateTicket), CheckoutController.validateTicket);

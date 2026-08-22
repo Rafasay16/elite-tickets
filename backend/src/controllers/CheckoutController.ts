@@ -30,6 +30,15 @@ export class CheckoutController {
     }
   }
 
+  static async getSharedTicket(req: AuthRequest, res: Response) {
+    try {
+      const ticket = await CheckoutService.getSharedTicket(req.params.id as string, req.user.id);
+      return res.json({ success: true, ticket });
+    } catch (error: any) {
+      return res.status(404).json({ error: error.message });
+    }
+  }
+
   static async validateTicket(req: AuthRequest, res: Response) {
     try {
       const details = await CheckoutService.validateTicket(req.body, req.user.id);

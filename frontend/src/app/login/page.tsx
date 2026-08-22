@@ -1,17 +1,19 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { AuthService } from '@/services/AuthService';
 import styles from './page.module.css';
 
-export default function LoginPage() {
+function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get('callbackUrl');
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,7 +23,9 @@ export default function LoginPage() {
     try {
       const data = await AuthService.login(email, password);
 
-      if (data.redirectUrl) {
+      if (callbackUrl) {
+        router.push(callbackUrl);
+      } else if (data.redirectUrl) {
         router.push(data.redirectUrl);
       } else {
         router.push('/');
@@ -103,5 +107,13 @@ export default function LoginPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="container" style={{ padding: '4rem 1.5rem', textAlign: 'center' }}>Carregando...</div>}>
+      <LoginForm />
+    </Suspense>
   );
 }

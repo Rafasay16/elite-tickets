@@ -57,6 +57,10 @@ a {
   text-decoration: none;
 }
 
+button, input, select, textarea {
+  font-family: inherit;
+}
+
 button {
   cursor: pointer;
   font-family: var(--font-heading-family); /* Botoes com a fonte dos titulos */
@@ -142,4 +146,26 @@ button {
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 1.5rem;
+}
+
+/* Base input styles */
+.input {
+  width: 100%;
+  padding: 0.75rem 1.5rem;
+  border-radius: 9999px;
+  border: 1px solid var(--border-glass);
+  background: transparent;
+  color: var(--text-primary);
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.input:focus {
+  border-color: var(--accent-neon);
+  box-shadow: 0 0 10px var(--accent-neon-glow);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.input::placeholder {
+  color: var(--text-secondary);
 }

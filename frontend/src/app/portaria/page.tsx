@@ -125,12 +125,24 @@ export default function PortariaPage() {
           <select 
             value={selectedEventId} 
             onChange={(e) => setSelectedEventId(e.target.value)}
-            className="input-field"
-            style={{ width: '100%', padding: '0.75rem', background: 'rgba(0,0,0,0.5)', color: 'white', border: '1px solid var(--border-glass)', borderRadius: '8px' }}
+            className="btn btn-secondary"
+            style={{ 
+              width: '100%', 
+              cursor: 'pointer',
+              appearance: 'none',
+              WebkitAppearance: 'none',
+              paddingRight: '2.5rem',
+              backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23f8fafc' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
+              backgroundRepeat: 'no-repeat',
+              backgroundPosition: 'right 1.5rem center',
+              backgroundSize: '1em',
+              textAlign: 'left',
+              justifyContent: 'flex-start'
+            }}
           >
-            <option value="" disabled>Selecione um evento...</option>
+            <option value="" disabled style={{ background: '#0f172a', color: 'white' }}>Selecione um evento...</option>
             {events.map(ev => (
-              <option key={ev.id} value={ev.id}>{ev.title} - {new Date(ev.date).toLocaleDateString('pt-BR')}</option>
+              <option key={ev.id} value={ev.id} style={{ background: '#0f172a', color: 'white' }}>{ev.title} - {new Date(ev.date).toLocaleDateString('pt-BR')}</option>
             ))}
           </select>
         </div>
@@ -149,7 +161,7 @@ export default function PortariaPage() {
             placeholder="Digite o código manualmente (ID)" 
             value={manualCode}
             onChange={(e) => setManualCode(e.target.value)}
-            style={{ flex: 1, padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-glass)', background: 'rgba(0,0,0,0.5)', color: 'white' }}
+            style={{ flex: 1, padding: '0.75rem 1.5rem', borderRadius: '9999px', border: '1px solid var(--border-glass)', background: 'transparent', color: 'var(--text-primary)', outline: 'none' }}
           />
           <button type="submit" className="btn btn-primary" disabled={loading || !selectedEventId}>Validar</button>
         </form>
