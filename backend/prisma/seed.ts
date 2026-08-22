@@ -145,29 +145,35 @@ async function main() {
 
   const createdEvents = [];
 
-  const cities = [
-    'Campina Grande', 'Campina Grande', 'Campina Grande', 'João Pessoa', 'Recife', 'São Paulo', 'Rio de Janeiro'
-  ];
+  const uniqueCities = ['Campina Grande', 'João Pessoa', 'Recife', 'São Paulo', 'Rio de Janeiro'];
 
   for (const evt of allEvents) {
-    const randomCity = cities[Math.floor(Math.random() * cities.length)];
-    
-    const created = await prisma.event.create({
-      data: {
-        externalId: evt.externalId,
-        title: evt.title,
-        posterUrl: evt.posterUrl,
-        backdropUrl: evt.backdropUrl,
-        date: new Date(Date.now() + evt.dateOffset * 24 * 60 * 60 * 1000), 
-        location: randomCity === 'Campina Grande' ? 'Cine Campina / Parque do Povo' : evt.location,
-        city: randomCity,
-        price: evt.price,
-        capacity: 100,
-        type: evt.type,
-        organizerId: organizador.id
-      }
-    });
-    createdEvents.push(created);
+    const numCities = Math.floor(Math.random() * 3) + 2;
+    const eventCities = new Set<string>();
+    eventCities.add('Campina Grande');
+    while (eventCities.size < numCities) {
+      eventCities.add(uniqueCities[Math.floor(Math.random() * uniqueCities.length)]);
+    }
+
+    for (const city of eventCities) {
+      const sessionDateOffset = evt.dateOffset + Math.floor(Math.random() * 6);
+      const created = await prisma.event.create({
+        data: {
+          externalId: evt.externalId,
+          title: evt.title,
+          posterUrl: evt.posterUrl,
+          backdropUrl: evt.backdropUrl,
+          date: new Date(Date.now() + sessionDateOffset * 24 * 60 * 60 * 1000), 
+          location: city === 'Campina Grande' ? (evt.type === 'MOVIE' ? 'Cine Araújo Campina Grande' : 'Parque do Povo') : evt.location,
+          city: city,
+          price: evt.price,
+          capacity: 100,
+          type: evt.type,
+          organizerId: organizador.id
+        }
+      });
+      createdEvents.push(created);
+    }
   }
 
   // Funcao para criar mapa visual (FILMES)
