@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { AdminService } from '@/services/AdminService';
+import { maskCPF, maskCNPJ } from '@/utils/masks';
 
 type Organizer = {
   id: string;
@@ -201,14 +202,14 @@ export default function SuperAdminPage() {
                 <div style={{ flex: 1 }}>
                   <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '0.5rem' }}>CPF (Obrigatório)</label>
                   <input 
-                    type="text" required value={cpf} onChange={e => setCpf(e.target.value)}
+                    type="text" required value={cpf} onChange={e => setCpf(maskCPF(e.target.value))}
                     style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-glass)', color: 'white' }}
                   />
                 </div>
                 <div style={{ flex: 1 }}>
                   <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '0.5rem' }}>CNPJ (Opcional)</label>
                   <input 
-                    type="text" value={cnpj} onChange={e => setCnpj(e.target.value)}
+                    type="text" value={cnpj} onChange={e => setCnpj(maskCNPJ(e.target.value))}
                     style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-glass)', color: 'white' }}
                   />
                 </div>
