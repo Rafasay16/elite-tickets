@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { CalendarIcon, MapPinIcon, GearIcon, TrashIcon } from '@/components/Icons';
 import { EventService } from '@/services/EventService';
+import { maskCEP, maskCurrency, getCurrencyNumber, maskInteger } from '@/utils/masks';
 
 type Event = {
   id: string;
@@ -152,7 +153,7 @@ export default function OrganizadorDashboard() {
   };
 
   const handleCepChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value;
+    const val = maskCEP(e.target.value);
     setFormData(prev => ({ ...prev, cep: val }));
     if (val.replace(/\D/g, '').length === 8) {
       fetchAddressByCep(val);
@@ -510,7 +511,7 @@ export default function OrganizadorDashboard() {
               <div style={{ display: 'flex', gap: '1rem' }}>
                 <div style={{ flex: 1 }}>
                   <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '0.5rem' }}>Categoria</label>
-                  <select required value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-glass)', color: 'white' }}>
+                  <select required value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', backgroundColor: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-glass)', color: 'white' }}>
                     <option value="Show">Show</option>
                     <option value="Teatro">Teatro</option>
                     <option value="Cinema">Cinema</option>
@@ -528,7 +529,7 @@ export default function OrganizadorDashboard() {
                   <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '0.5rem' }}>
                     CEP {loadingCep && <span style={{ color: 'var(--accent-neon)', fontSize: '0.7rem' }}>(Buscando...)</span>}
                   </label>
-                  <input type="text" placeholder="Apenas números" maxLength={9} value={formData.cep} onChange={handleCepChange} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-glass)', color: 'white' }} />
+                  <input type="text" placeholder="00000-000" maxLength={9} value={formData.cep} onChange={handleCepChange} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-glass)', color: 'white' }} />
                 </div>
                 <div style={{ flex: 1 }}>
                   <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '0.5rem' }}>Local Completo</label>
@@ -538,11 +539,11 @@ export default function OrganizadorDashboard() {
               <div style={{ display: 'flex', gap: '1rem' }}>
                 <div style={{ flex: 1 }}>
                   <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '0.5rem' }}>Capacidade (Lotação)</label>
-                  <input required type="number" min="1" value={formData.capacity} onChange={e => setFormData({...formData, capacity: Number(e.target.value)})} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-glass)', color: 'white' }} />
+                  <input required type="text" value={formData.capacity === 0 ? '' : maskInteger(formData.capacity)} onChange={e => setFormData({...formData, capacity: Number(maskInteger(e.target.value))})} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-glass)', color: 'white' }} />
                 </div>
                 <div style={{ flex: 1 }}>
                   <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '0.5rem' }}>Preço Base (R$)</label>
-                  <input required type="number" min="0" step="0.01" value={formData.price} onChange={e => setFormData({...formData, price: Number(e.target.value)})} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-glass)', color: 'white' }} />
+                  <input required type="text" value={maskCurrency(formData.price)} onChange={e => setFormData({...formData, price: getCurrencyNumber(e.target.value)})} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-glass)', color: 'white' }} />
                 </div>
               </div>
               <div>

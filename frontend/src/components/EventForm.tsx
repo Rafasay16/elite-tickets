@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { getImageUrl, TMDbMovie } from '@/lib/tmdb';
 import { useRouter } from 'next/navigation';
 import { EventService } from '@/services/EventService';
+import { maskCurrency, getCurrencyNumber, maskInteger } from '@/utils/masks';
 
 export default function EventForm({ movie }: { movie: TMDbMovie }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -13,9 +14,9 @@ export default function EventForm({ movie }: { movie: TMDbMovie }) {
   const [formData, setFormData] = useState({
     date: '',
     location: 'Cine Araújo - Sala VIP 1',
-    price: '45.00',
-    capacity: '50',
-    maxTicketsPerUser: '4',
+    price: 45.00,
+    capacity: 50,
+    maxTicketsPerUser: 4,
     city: ''
   });
 
@@ -55,9 +56,9 @@ export default function EventForm({ movie }: { movie: TMDbMovie }) {
         date: new Date(formData.date).toISOString(),
         location: formData.location,
         city: formData.city,
-        price: Number(formData.price),
-        capacity: Number(formData.capacity),
-        maxTicketsPerUser: Number(formData.maxTicketsPerUser)
+        price: formData.price,
+        capacity: formData.capacity,
+        maxTicketsPerUser: formData.maxTicketsPerUser
       });
       
       alert('Evento publicado com sucesso!');
@@ -116,7 +117,7 @@ export default function EventForm({ movie }: { movie: TMDbMovie }) {
                     value={selectedState}
                     onChange={(e) => setSelectedState(e.target.value)}
                     required
-                    style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-glass)', background: 'rgba(0,0,0,0.5)', color: 'white' }}
+                    style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-glass)', backgroundColor: 'rgba(0,0,0,0.5)', color: 'white' }}
                   >
                     <option value="" style={{ color: 'black' }}>Selecione o Estado</option>
                     {states.map(state => (
@@ -132,7 +133,7 @@ export default function EventForm({ movie }: { movie: TMDbMovie }) {
                     onChange={(e) => setFormData({...formData, city: e.target.value})}
                     required
                     disabled={!selectedState || cities.length === 0}
-                    style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-glass)', background: 'rgba(0,0,0,0.5)', color: 'white', opacity: (!selectedState || cities.length === 0) ? 0.5 : 1 }}
+                    style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-glass)', backgroundColor: 'rgba(0,0,0,0.5)', color: 'white', opacity: (!selectedState || cities.length === 0) ? 0.5 : 1 }}
                   >
                     <option value="" style={{ color: 'black' }}>Selecione a Cidade</option>
                     {cities.map(city => (
@@ -157,21 +158,20 @@ export default function EventForm({ movie }: { movie: TMDbMovie }) {
                 <div style={{ flex: 1 }}>
                   <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Preço (R$)</label>
                   <input 
-                    type="number" 
-                    step="0.01" 
+                    type="text" 
                     required 
-                    value={formData.price}
-                    onChange={(e) => setFormData({...formData, price: e.target.value})}
+                    value={maskCurrency(formData.price)}
+                    onChange={(e) => setFormData({...formData, price: getCurrencyNumber(e.target.value)})}
                     style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-glass)', background: 'rgba(0,0,0,0.5)', color: 'white' }}
                   />
                 </div>
                 <div style={{ flex: 1 }}>
                   <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Capacidade (Assentos)</label>
                   <input 
-                    type="number" 
+                    type="text" 
                     required 
-                    value={formData.capacity}
-                    onChange={(e) => setFormData({...formData, capacity: e.target.value})}
+                    value={maskInteger(formData.capacity)}
+                    onChange={(e) => setFormData({...formData, capacity: Number(maskInteger(e.target.value))})}
                     style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-glass)', background: 'rgba(0,0,0,0.5)', color: 'white' }}
                   />
                 </div>
@@ -180,11 +180,10 @@ export default function EventForm({ movie }: { movie: TMDbMovie }) {
               <div>
                 <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Limite de Ingressos por Cliente</label>
                 <input 
-                  type="number" 
-                  min="1"
+                  type="text" 
                   required 
-                  value={formData.maxTicketsPerUser}
-                  onChange={(e) => setFormData({...formData, maxTicketsPerUser: e.target.value})}
+                  value={maskInteger(formData.maxTicketsPerUser)}
+                  onChange={(e) => setFormData({...formData, maxTicketsPerUser: Number(maskInteger(e.target.value))})}
                   style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-glass)', background: 'rgba(0,0,0,0.5)', color: 'white' }}
                 />
               </div>
