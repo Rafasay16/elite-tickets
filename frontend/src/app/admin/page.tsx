@@ -162,7 +162,7 @@ export default function OrganizadorDashboard() {
   };
 
   const toggleEventStatus = async (id: string, currentStatus: string) => {
-    const newStatus = currentStatus === 'PUBLISHED' ? 'PAUSED' : 'PUBLISHED';
+    const newStatus = currentStatus === 'PUBLISHED' ? 'DRAFT' : 'PUBLISHED';
     try {
       await EventService.toggleStatus(id, newStatus);
       fetchEvents();
@@ -446,7 +446,7 @@ export default function OrganizadorDashboard() {
                 <h2 style={{ marginBottom: '1rem', borderBottom: '1px solid var(--border-glass)', paddingBottom: '0.5rem', color: 'var(--text-primary)', fontSize: '1.25rem' }}>{category}</h2>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
                   {catEvents.map(evt => {
-                    const isPaused = evt.status === 'PAUSED';
+                    const isPaused = evt.status === 'PAUSED' || evt.status === 'DRAFT';
                     return (
                       <div key={evt.id} className="glass-panel" style={{ padding: '1.5rem', opacity: isPaused ? 0.6 : 1, position: 'relative' }}>
                         {isPaused && (
