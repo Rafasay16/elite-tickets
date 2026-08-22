@@ -123,6 +123,7 @@ export default function OrganizadorDashboard() {
         maxTicketsPerUser: Number(formData.maxTicketsPerUser),
         posterUrl: formData.base64Image || undefined
       });
+      alert('Evento publicado com sucesso!');
       setIsEventModalOpen(false);
       fetchEvents();
     } catch (err: any) {
