@@ -1,137 +1,128 @@
-# Elite Tickets 🎟️
+# Elite Tickets
 
-A fullstack event ticketing application with real-time QR Code validation, seat reservation, and an awesome dynamic UI.
+A full-stack event ticketing application featuring real-time QR Code validation, seat reservation, and a dynamic, interactive user interface.
 
-## 🚀 Live Demo
-- **Frontend:** [https://elite-tickets-vlr.vercel.app/](https://elite-tickets-vlr.vercel.app/)
-- **API / Backend:** [https://elite-tickets-api-uiqi.onrender.com](https://elite-tickets-api-uiqi.onrender.com)
+## Live Demonstrations
+- **Frontend Platform:** [https://elite-tickets-vlr.vercel.app/](https://elite-tickets-vlr.vercel.app/)
+- **Backend API Services:** [https://elite-tickets-api-uiqi.onrender.com](https://elite-tickets-api-uiqi.onrender.com)
 
-## 🛠️ Stack
+## Technology Stack
 - **Frontend:** Next.js 14, Tailwind CSS, Lucide React
 - **Backend:** Node.js, Express, Prisma ORM
-- **Database:** PostgreSQL (Supabase)
-- **Hosting:** Vercel (Front) & Render (Back)
-
-Elite Tickets is a comprehensive, full-stack ticketing platform designed for cinemas, concerts, and festivals. It provides an end-to-end solution for event management, ticket purchasing, and access control.
-
-The system is built as a monorepo, divided into a decoupled frontend and backend architecture, ensuring scalability and ease of maintenance.
+- **Database:** PostgreSQL (Hosted on Supabase)
+- **Infrastructure:** Vercel (Frontend Hosting) & Render (Backend Hosting)
 
 ## Architecture Overview
 
-The repository is structured into two main applications:
+Elite Tickets is a comprehensive ticketing platform designed for cinemas, concerts, and regional festivals. It provides an end-to-end solution for event management, ticket purchasing, and access control.
 
-### Frontend
+The system is structured as a monorepo containing decoupled frontend and backend services, ensuring high scalability, maintainability, and clear separation of concerns.
+
+### Frontend Subsystem
 - **Framework:** Next.js 14 (App Router)
 - **Language:** TypeScript
-- **Styling:** CSS Modules with a custom dark-mode, glassmorphism design system.
-- **Key Features:**
-  - Dynamic interactive seat mapping and sector selection.
-  - Location-based event filtering and multi-session aggregation.
-  - Role-based routing and specialized dashboards.
-  - Dynamic QR Code rendering for ticket validation.
+- **Design System:** Custom CSS Modules featuring modern dark-mode and glassmorphism aesthetics.
+- **Core Capabilities:**
+  - Interactive and dynamic seat mapping and sector selection algorithms.
+  - Geolocation-based event filtering and multi-session scheduling logic.
+  - Role-based routing supporting specialized administrative dashboards.
+  - Client-side dynamic QR Code rendering for ticket validation workflows.
 
-### Backend
-- **Framework:** Node.js with Express
+### Backend Subsystem
+- **Framework:** Node.js powered by Express
 - **Language:** TypeScript
-- **Database ORM:** Prisma
-- **Database:** SQLite (Configured for development; easily swappable to PostgreSQL/MySQL)
-- **Key Features:**
-  - RESTful API architecture.
-  - JWT-based authentication and authorization.
-  - Transactional seat reservation and ticket generation logic.
-  - Comprehensive data modeling for users, events, sessions, seats, and tickets.
+- **Object-Relational Mapping:** Prisma
+- **Database Engine:** PostgreSQL (Supabase integration)
+- **Core Capabilities:**
+  - Secure RESTful API architecture.
+  - JSON Web Token (JWT) based authentication and authorization protocols.
+  - ACID-compliant transactional seat reservation logic.
+  - Comprehensive relational data modeling encompassing users, events, locations, seats, and reservations.
 
-## User Roles and Capabilities
+## Access Control and Roles
 
-The platform supports a robust Role-Based Access Control (RBAC) system:
+The platform implements a strict Role-Based Access Control (RBAC) architecture:
 
-1. **Client (CLIENT):** Can browse events by city, select specific sessions, choose seats via an interactive map, simulate payments, and view their purchased tickets.
-2. **Organizer (ORGANIZER):** Can access the Admin Dashboard to create and manage events, set up seat capacities, and monitor sales metrics.
-3. **Super Admin (SUPER_ADMIN):** Has global visibility over platform metrics, total revenue, and system-wide administration.
-4. **Portaria (PORTARIA):** Can access the entry dashboard to scan or manually input ticket IDs to validate entry in real-time, preventing duplicate entries or expired tickets.
+1. **Client (CLIENT):** Permitted to browse location-filtered events, select specific time sessions, interact with seat maps, simulate payment processing, and view acquired ticket portfolios.
+2. **Organizer (ORGANIZER):** Granted access to the Administrative Dashboard for creating events, defining seat capacities, and monitoring real-time financial metrics.
+3. **Super Administrator (SUPER_ADMIN):** Provided with global visibility over all platform analytics, total revenue streams, and comprehensive system administration rights.
+4. **Gatekeeper (PORTARIA):** Authorized to access the entry control interface to scan QR codes or manually validate ticket identifiers in real-time, effectively mitigating duplicate entries and fraud.
 
-## Core Features
+## System Setup and Initialization
 
-- **Location-Aware Browsing:** Users select their city, and the platform automatically filters available events.
-- **Multi-Session Support:** Events (like movies) can have multiple sessions on different dates and times under the same title, aggregating intelligently on the home page.
-- **Interactive Booking:** 
-  - For cinemas: Individual seat selection on a visual grid.
-  - For shows/festivals: Lot-based sector selection with maximum ticket constraints.
-- **Ticket Lifecycle Management:** Tickets possess states (Valid, Used, Expired) and include dynamically generated QR Codes.
-- **TMDb Integration:** Automated fetching of high-quality movie posters and backdrops for cinematic events.
+### Requirements
+- Node.js Runtime (v18 or higher required)
+- Package Manager (npm or yarn)
 
-## Getting Started
+### Installation Procedures
 
-### Prerequisites
-- Node.js (v18 or higher recommended)
-- npm or yarn
-
-### Installation
-
-Clone the repository and install dependencies for the root, frontend, and backend all at once using the root script:
+Clone the repository and install all required dependencies across the root, frontend, and backend packages:
 
 ```bash
-# Install all dependencies (root, backend, and frontend)
+# Initialize dependencies globally
 npm install
 npm run install:all
 ```
 
-### Configuration
+### Environment Configuration
 
-#### Backend
-Create a `.env` file in the `backend` directory with the following variables:
+#### Backend Environment
+Create a `.env` file in the `backend` directory containing the database and security configurations:
 ```env
 PORT=3333
-DATABASE_URL="file:./dev.db"
-JWT_SECRET="your_secure_jwt_secret"
+DATABASE_URL="postgresql://user:password@host:port/database"
+DIRECT_URL="postgresql://user:password@host:port/database"
+JWT_SECRET="your_secure_jwt_key"
 ```
 
-Initialize the database:
+Deploy the database schema to the PostgreSQL instance:
 ```bash
 cd backend
+npx prisma generate
 npx prisma db push
 ```
 
-#### Frontend
-Create a `.env` file in the `frontend` directory with the following variables:
+#### Frontend Environment
+Create a `.env` file in the `frontend` directory containing integration endpoints:
 ```env
 NEXT_PUBLIC_API_URL="http://localhost:3333"
-TMDB_API_KEY="your_tmdb_api_key_here"
 ```
 
-### Running the Application
+### Local Development Server
 
-To run the application locally, you can start both servers simultaneously using a single command from the root directory:
+To initialize the application locally, start the concurrent development servers from the root directory:
 
 ```bash
 npm run dev
 ```
 
-This will use `concurrently` to launch both the backend API and the frontend client. The frontend will be available at `http://localhost:3000` and the backend API at `http://localhost:3333`.
+The frontend application will compile and serve on `http://localhost:3000`, while the backend API will initialize on `http://localhost:3333`.
 
-## Dados de Teste
+## Development Test Data
 
-O projeto inclui dados iniciais (semeados) com eventos publicados e ingressos disponiveis, para que seja possivel testar o fluxo completo de compra e gerenciamento sem precisar configurar tudo do zero.
+The project includes an automated seeding script that populates the database with real-world API data (TMDb and Ticketmaster) and exclusive regional events (e.g., Campina Grande, João Pessoa, Recife).
 
-Contas de acesso para teste:
-
-- **Clientes:** 
-  - `rafinha@gmail.com` / `123456`
-  - `rafael@gmail.com` / `123456`
-- **Organizador:** 
-  - `admin@admin.com` / `123456`
-- **Portaria:** 
-  - `porteiro1@gmail.com` / `123456`
-- **Super Admin:** 
-  - `superadmin@elite.com` / `123456`
-
-## Database Management
-
-You can inspect and manage the database using Prisma Studio directly from the root directory:
+To execute the seed sequence:
 ```bash
-npm run prisma:studio
+cd backend
+npx tsx prisma/seed.ts
 ```
+
+Standardized authentication credentials for development testing:
+
+- **Client Role:**
+  - Email: `rafinha@gmail.com`
+  - Password: `123456`
+- **Organizer Role:**
+  - Email: `admin@admin.com`
+  - Password: `123456`
+- **Gatekeeper Role (Portaria):**
+  - Email: `portaria@elite.com`
+  - Password: `123456`
+- **Super Administrator Role:**
+  - Email: `superadmin@elite.com`
+  - Password: `123456`
 
 ## License
 
-This project is proprietary and confidential. Unauthorized copying, distribution, or modification is strictly prohibited.
+This software architecture and its implementations are proprietary and confidential. Unauthorized distribution or modification is prohibited.
