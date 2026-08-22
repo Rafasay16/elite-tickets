@@ -19,7 +19,7 @@ export class EventService {
   }
 
   static async toggleStatus(id: string, status: string) {
-    const res = await fetchApi('/events', {
+    const res = await fetchApi('/events/status', {
       method: 'PUT',
       body: JSON.stringify({ id, status }),
     });
