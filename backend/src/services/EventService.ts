@@ -65,16 +65,28 @@ export class EventService {
     const rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
     const seatsPerRow = Math.ceil(data.capacity / rows.length);
     let created = 0;
+    
+    let seatsData = [];
 
     for (const row of rows) {
       for (let i = 1; i <= seatsPerRow; i++) {
         if (created >= data.capacity) break;
-        await prisma.seat.create({
-          data: { eventId: event.id, row, number: i, status: 'AVAILABLE' }
+        seatsData.push({
+          eventId: event.id,
+          row,
+          number: i,
+          status: 'AVAILABLE'
         });
         created++;
       }
       if (created >= data.capacity) break;
+    }
+
+    // Insert in chunks of 5000 to avoid database parameter limits
+    const CHUNK_SIZE = 5000;
+    for (let i = 0; i < seatsData.length; i += CHUNK_SIZE) {
+      const chunk = seatsData.slice(i, i + CHUNK_SIZE);
+      await prisma.seat.createMany({ data: chunk });
     }
 
     return event;
