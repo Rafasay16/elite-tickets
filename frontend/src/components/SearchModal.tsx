@@ -159,7 +159,7 @@ export default function SearchModal() {
           
           {!loading && query && events.length === 0 && (
             <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
-              Nenhum evento encontrado para "{query}"
+              Nenhum evento encontrado para &quot;{query}&quot;
             </div>
           )}
 

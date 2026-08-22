@@ -647,7 +647,7 @@ export default function OrganizadorDashboard() {
             <h4 style={{ marginBottom: '1rem', borderBottom: '1px solid var(--border-glass)', paddingBottom: '0.5rem' }}>Cadastrar Novo Membro</h4>
             <form onSubmit={handleCreatePortaria} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '0.5rem' }}>Nome (Ex: "Equipe Setor A")</label>
+                <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '0.5rem' }}>Nome (Ex: &quot;Equipe Setor A&quot;)</label>
                 <input required type="text" value={portariaData.name} onChange={e => setPortariaData({...portariaData, name: e.target.value})} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-glass)', color: 'white' }} />
               </div>
               <div>
