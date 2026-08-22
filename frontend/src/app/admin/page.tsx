@@ -116,12 +116,12 @@ export default function OrganizadorDashboard() {
         title: formData.title,
         description: formData.description,
         category: formData.category,
-        date: formData.date,
+        date: new Date(formData.date).toISOString(),
         location: formData.location,
         price: Number(formData.price),
         capacity: Number(formData.capacity),
         maxTicketsPerUser: Number(formData.maxTicketsPerUser),
-        posterUrl: formData.base64Image
+        posterUrl: formData.base64Image || undefined
       });
       setIsEventModalOpen(false);
       fetchEvents();
