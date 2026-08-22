@@ -176,6 +176,53 @@ async function main() {
     }
   }
 
+  const exclusiveEvents = [
+    {
+      externalId: 'EXC-1',
+      title: 'O Maior São João do Mundo',
+      posterUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800',
+      backdropUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=1200',
+      date: new Date(Date.now() + 20 * 24 * 60 * 60 * 1000),
+      location: 'Parque do Povo',
+      city: 'Campina Grande',
+      price: 150.0,
+      capacity: 500,
+      type: 'SHOW',
+      organizerId: organizador.id
+    },
+    {
+      externalId: 'EXC-2',
+      title: 'Festival de Verão de João Pessoa',
+      posterUrl: 'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=800',
+      backdropUrl: 'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=1200',
+      date: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
+      location: 'Busto de Tamandaré',
+      city: 'João Pessoa',
+      price: 100.0,
+      capacity: 500,
+      type: 'SHOW',
+      organizerId: organizador.id
+    },
+    {
+      externalId: 'EXC-3',
+      title: 'Galo da Madrugada - Área VIP',
+      posterUrl: 'https://images.unsplash.com/photo-1533174000253-1d59da5f2061?w=800',
+      backdropUrl: 'https://images.unsplash.com/photo-1533174000253-1d59da5f2061?w=1200',
+      date: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000),
+      location: 'Centro Histórico',
+      city: 'Recife',
+      price: 350.0,
+      capacity: 500,
+      type: 'SHOW',
+      organizerId: organizador.id
+    }
+  ];
+
+  for (const exc of exclusiveEvents) {
+    const created = await prisma.event.create({ data: exc });
+    createdEvents.push(created);
+  }
+
   // Funcao para criar mapa visual (FILMES)
   const createMatrixSeats = async (eventId: string) => {
     const rows = ['A', 'B', 'C', 'D', 'E'];
