@@ -1,0 +1,43 @@
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import prisma from '../models/prisma';
+
+const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_123';
+
+export class AuthService {
+  static async login(data: any) {
+    const { email, password } = data;
+    if (!email || !password) throw new Error('Email e senha são obrigatórios');
+
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) throw new Error('Credenciais inválidas');
+
+    const isValid = await bcrypt.compare(password, user.password || '');
+    if (!isValid) throw new Error('Credenciais inválidas');
+
+    if (user.role === 'ORGANIZER' && !user.isActive) {
+      throw new Error('Conta de organizador inativa.');
+    }
+
+    const token = jwt.sign({ id: user.id, email: user.email, role: user.role, name: user.name, city: user.city }, JWT_SECRET, { expiresIn: '8h' });
+
+    return { token, role: user.role, city: user.city };
+  }
+
+  static async register(data: any) {
+    const { name, email, password, city } = data;
+    if (!name || !email || !password || !city) throw new Error('Dados incompletos');
+
+    const existingUser = await prisma.user.findUnique({ where: { email } });
+    if (existingUser) throw new Error('Email já cadastrado');
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = await prisma.user.create({
+      data: { name, email, password: hashedPassword, role: 'CLIENT', city }
+    });
+
+    const token = jwt.sign({ id: user.id, email: user.email, role: user.role, name: user.name, city: user.city }, JWT_SECRET, { expiresIn: '8h' });
+
+    return { token, role: user.role, city: user.city };
+  }
+}

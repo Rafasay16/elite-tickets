@@ -24,6 +24,7 @@ model User {
   photoUrl     String? // URL do avatar escolhido
   preferences  String? // Preferências salvas como JSON string
   paymentMock  String? // Cartão simulado salvo como JSON string
+  creatorId    String? // Vincula o Porteiro ao Organizador que o criou
   reservations Reservation[]
   events       Event[]       @relation("OrganizerEvents") // Apenas para ORGANIZER
 }
