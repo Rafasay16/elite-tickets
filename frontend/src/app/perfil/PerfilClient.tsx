@@ -61,7 +61,8 @@ export default function PerfilClient({ initialProfile, sessionToken }: { initial
     setError('');
     
     try {
-      const res = await fetch(`http://127.0.0.1:3333/api/users/profile`, {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3333/api';
+      const res = await fetch(`${apiUrl}/users/profile`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
