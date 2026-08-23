@@ -4,14 +4,31 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { CheckoutService } from '@/services/CheckoutService';
+import { fetchApi } from '@/lib/api';
 import styles from './page.module.css';
 
 export default function PagamentoPage({ params }: { params: { id: string } }) {
   const [timeLeft, setTimeLeft] = useState(600); // 10 minutos
   const [loading, setLoading] = useState(false);
   const [method, setMethod] = useState<'pix' | 'card'>('pix');
+  const [cards, setCards] = useState<any[]>([]);
+  const [selectedCardIdx, setSelectedCardIdx] = useState(0);
   const router = useRouter();
   const reservationId = params.id;
+
+  useEffect(() => {
+    fetchApi('/users/profile')
+      .then(res => res.json())
+      .then(data => {
+        if (data.profile && data.profile.paymentMock) {
+          try {
+            const parsed = JSON.parse(data.profile.paymentMock);
+            if (Array.isArray(parsed) && parsed.length > 0) setCards(parsed);
+          } catch {}
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (timeLeft <= 0) {
@@ -31,6 +48,14 @@ export default function PagamentoPage({ params }: { params: { id: string } }) {
   const seconds = timeLeft % 60;
 
   const handlePayment = async () => {
+    if (method === 'card') {
+      const card = cards[selectedCardIdx];
+      if (card && card.status === 'declined') {
+        alert('Pagamento recusado pela administradora do cartão!');
+        return;
+      }
+    }
+
     setLoading(true);
     try {
       await CheckoutService.confirm(reservationId);
@@ -88,24 +113,48 @@ export default function PagamentoPage({ params }: { params: { id: string } }) {
             </div>
           ) : (
             <div className={styles.cardArea}>
-              <div className={styles.inputGroup}>
-                <label>Número do Cartão Fictício</label>
-                <input type="text" placeholder="0000 0000 0000 0000" defaultValue="4111 1111 1111 1111" disabled />
-              </div>
-              <div style={{ display: 'flex', gap: '1rem', width: '100%' }}>
+              {cards.length > 0 ? (
+                <>
+                  <div className={styles.inputGroup}>
+                    <label>Selecione um Cartão Salvo</label>
+                    <select 
+                      className="input" 
+                      value={selectedCardIdx} 
+                      onChange={(e) => setSelectedCardIdx(Number(e.target.value))}
+                      style={{ padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-glass)', background: 'var(--bg-card)', color: 'var(--text-primary)', width: '100%', marginBottom: '1rem' }}
+                    >
+                      {cards.map((c, idx) => (
+                        <option key={idx} value={idx}>
+                          {c.cardNumber} - {c.name} {c.status === 'declined' ? '(Recusado)' : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className={styles.inputGroup}>
+                    <label>Número do Cartão</label>
+                    <input type="text" value={cards[selectedCardIdx]?.cardNumber || ''} disabled />
+                  </div>
+                  <div style={{ display: 'flex', gap: '1rem', width: '100%' }}>
+                    <div className={styles.inputGroup}>
+                      <label>Validade</label>
+                      <input type="text" value={cards[selectedCardIdx]?.expiry || ''} disabled />
+                    </div>
+                    <div className={styles.inputGroup}>
+                      <label>CVV</label>
+                      <input type="text" value="***" disabled />
+                    </div>
+                  </div>
+                  <div className={styles.inputGroup}>
+                    <label>Nome no Cartão</label>
+                    <input type="text" value={cards[selectedCardIdx]?.name || ''} disabled />
+                  </div>
+                </>
+              ) : (
                 <div className={styles.inputGroup}>
-                  <label>Validade</label>
-                  <input type="text" placeholder="MM/AA" defaultValue="12/30" disabled />
+                  <label>Número do Cartão Fictício</label>
+                  <input type="text" placeholder="0000 0000 0000 0000" defaultValue="4111 1111 1111 1111" disabled />
                 </div>
-                <div className={styles.inputGroup}>
-                  <label>CVV</label>
-                  <input type="text" placeholder="123" defaultValue="123" disabled />
-                </div>
-              </div>
-              <div className={styles.inputGroup}>
-                <label>Nome no Cartão</label>
-                <input type="text" placeholder="NOME IMPRESSO" defaultValue="JOAO SILVA" disabled />
-              </div>
+              )}
             </div>
           )}
 

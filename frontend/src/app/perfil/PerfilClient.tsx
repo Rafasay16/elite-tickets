@@ -33,9 +33,18 @@ export default function PerfilClient({ initialProfile, sessionToken }: { initial
     catch { return { newsletter: true, sms: false }; }
   });
 
-  const [paymentMock, setPaymentMock] = useState<{cardNumber: string, name: string, expiry: string}>(() => {
-    try { return JSON.parse(initialProfile.paymentMock) || { cardNumber: '**** **** **** 1234', name: initialProfile.name, expiry: '12/29' }; }
-    catch { return { cardNumber: '**** **** **** 1234', name: initialProfile.name, expiry: '12/29' }; }
+  const [paymentMocks, setPaymentMocks] = useState<{cardNumber: string, name: string, expiry: string, status: string}[]>(() => {
+    const defaults = [
+      { cardNumber: '**** **** **** 1234', name: initialProfile.name || 'JOÃO SILVA', expiry: '12/29', status: 'approved' },
+      { cardNumber: '**** **** **** 0000', name: initialProfile.name || 'JOÃO SILVA', expiry: '12/29', status: 'declined' }
+    ];
+    try { 
+      const parsed = JSON.parse(initialProfile.paymentMock);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      if (parsed && parsed.cardNumber) return [parsed, defaults[1]];
+      return defaults;
+    }
+    catch { return defaults; }
   });
 
   const [loading, setLoading] = useState(false);
@@ -61,7 +70,7 @@ export default function PerfilClient({ initialProfile, sessionToken }: { initial
         body: JSON.stringify({
           ...formData,
           preferences: JSON.stringify(preferences),
-          paymentMock: JSON.stringify(paymentMock),
+          paymentMock: JSON.stringify(paymentMocks),
         }),
       });
 
@@ -159,17 +168,39 @@ export default function PerfilClient({ initialProfile, sessionToken }: { initial
             <h2>Métodos de Pagamento</h2>
             <p className="text-secondary" style={{ marginBottom: '1.5rem' }}>Seus cartões salvos para compras rápidas. (Ambiente Simulado)</p>
             
-            <div style={{ background: 'rgba(255,255,255,0.05)', padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--border-glass)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                <div style={{ width: '50px', height: '32px', background: 'var(--accent-neon)', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#000', fontWeight: 'bold' }}>VISA</div>
-                <div>
-                  <div style={{ fontWeight: 'bold' }}>{paymentMock.cardNumber}</div>
-                  <div className="text-secondary" style={{ fontSize: '0.85rem' }}>Expira em {paymentMock.expiry}</div>
+            {paymentMocks.map((mock, idx) => (
+              <div key={idx} style={{ background: 'rgba(255,255,255,0.05)', padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--border-glass)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  <div style={{ width: '50px', height: '32px', background: mock.status === 'declined' ? 'var(--danger)' : 'var(--accent-neon)', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: mock.status === 'declined' ? '#fff' : '#000', fontWeight: 'bold', fontSize: '0.75rem' }}>VISA</div>
+                  <div>
+                    <div style={{ fontWeight: 'bold' }}>{mock.cardNumber} {mock.status === 'declined' ? '(Recusado)' : ''}</div>
+                    <div className="text-secondary" style={{ fontSize: '0.85rem' }}>Expira em {mock.expiry}</div>
+                  </div>
                 </div>
+                <button 
+                  className="btn btn-secondary" 
+                  style={{ color: 'var(--danger)', borderColor: 'rgba(220, 38, 38, 0.3)' }}
+                  onClick={() => setPaymentMocks(prev => prev.filter((_, i) => i !== idx))}
+                >
+                  Remover
+                </button>
               </div>
-              <button className="btn btn-secondary" style={{ color: 'var(--danger)', borderColor: 'rgba(220, 38, 38, 0.3)' }}>Remover</button>
-            </div>
-            <button className="btn btn-primary" style={{ marginTop: '1.5rem', width: '100%' }}>+ Adicionar Novo Cartão Simulado</button>
+            ))}
+            <button 
+              className="btn btn-primary" 
+              style={{ marginTop: '0.5rem', width: '100%' }}
+              onClick={() => {
+                const newCard = { 
+                  cardNumber: `**** **** **** ${Math.floor(1000 + Math.random() * 9000)}`, 
+                  name: formData.name || 'NOVO CARTAO', 
+                  expiry: '12/32', 
+                  status: 'approved' 
+                };
+                setPaymentMocks(prev => [...prev, newCard]);
+              }}
+            >
+              + Adicionar Novo Cartão Simulado
+            </button>
           </div>
         )}
 
