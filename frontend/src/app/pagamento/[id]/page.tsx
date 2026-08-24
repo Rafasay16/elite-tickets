@@ -20,11 +20,26 @@ export default function PagamentoPage({ params }: { params: { id: string } }) {
     fetchApi('/users/profile')
       .then(res => res.json())
       .then(data => {
+        const defaults = [
+          { cardNumber: '**** **** **** 1234', name: data.profile?.name || 'Cliente Fictício', expiry: '12/29', status: 'approved' },
+          { cardNumber: '**** **** **** 0000', name: data.profile?.name || 'Cliente Fictício', expiry: '12/29', status: 'declined' }
+        ];
+        
         if (data.profile && data.profile.paymentMock) {
           try {
             const parsed = JSON.parse(data.profile.paymentMock);
-            if (Array.isArray(parsed) && parsed.length > 0) setCards(parsed);
-          } catch {}
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setCards(parsed);
+            } else if (parsed && parsed.cardNumber) {
+              setCards([parsed, defaults[1]]);
+            } else {
+              setCards(defaults);
+            }
+          } catch {
+            setCards(defaults);
+          }
+        } else {
+          setCards(defaults);
         }
       })
       .catch(() => {});
