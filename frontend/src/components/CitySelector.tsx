@@ -88,8 +88,8 @@ export default function CitySelector({ initialCity }: { initialCity: string }) {
       console.error('Erro Geolocation:', error);
       alert('Não foi possível obter sua localização (Tempo esgotado ou bloqueado pelo sistema). Selecione o estado e a cidade manualmente.');
     }, {
-      timeout: 10000, // 10 segundos no máximo, evita travar para sempre no Windows
-      enableHighAccuracy: true
+      timeout: 15000, // Aumentado para 15 segundos
+      enableHighAccuracy: false // Definido como false pois só precisamos da cidade, o GPS de alta precisão causa muito timeout
     });
   };
 
