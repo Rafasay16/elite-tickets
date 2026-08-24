@@ -83,13 +83,14 @@ export class CheckoutService {
       const decoded: any = jwt.verify(qrCode, secret);
       searchId = decoded.reservationId;
     } catch (err) {
-      throw new Error('QR Code inválido ou forjado');
+      // Se não for um JWT válido, assumimos que é uma digitação manual do ID (completo ou parcial)
+      searchId = qrCode;
     }
     
     searchId = searchId.replace('#', '').toLowerCase();
 
-    const reservation = await prisma.reservation.findUnique({
-      where: { id: searchId },
+    const reservation = await prisma.reservation.findFirst({
+      where: { id: { startsWith: searchId } },
       include: { seat: true, event: true }
     });
 
