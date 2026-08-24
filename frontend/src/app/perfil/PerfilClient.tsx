@@ -62,23 +62,34 @@ export default function PerfilClient({ initialProfile, sessionToken }: { initial
     
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3333/api';
+      
+      const payload: any = {
+        ...formData,
+        preferences: JSON.stringify(preferences),
+        paymentMock: JSON.stringify(paymentMocks),
+      };
+
+      // Remove senhas vazias para não disparar o erro de validação (zod min length)
+      if (!payload.currentPassword) delete payload.currentPassword;
+      if (!payload.newPassword) delete payload.newPassword;
+
       const res = await fetch(`${apiUrl}/users/profile`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${sessionToken}`,
         },
-        body: JSON.stringify({
-          ...formData,
-          preferences: JSON.stringify(preferences),
-          paymentMock: JSON.stringify(paymentMocks),
-        }),
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
       if (res.ok) {
         setMessage('Perfil atualizado com sucesso!');
         setFormData(prev => ({ ...prev, currentPassword: '', newPassword: '' })); // clear passwords
+        // Define o cookie da cidade para sincronizar a navegação com o perfil
+        if (formData.city) {
+          document.cookie = `city=${encodeURIComponent(formData.city)}; path=/; max-age=31536000`; // 1 ano
+        }
         router.refresh();
       } else {
         setError(data.error || 'Erro ao atualizar o perfil');

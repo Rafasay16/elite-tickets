@@ -38,9 +38,30 @@ export default function CitySelector({ initialCity }: { initialCity: string }) {
       .catch(err => console.error('Erro ao buscar cidades', err));
   }, [selectedState]);
 
-  const handleSaveCity = (cityName: string) => {
+  const handleSaveCity = async (cityName: string) => {
     document.cookie = `city=${encodeURIComponent(cityName)}; path=/; max-age=31536000`; // 1 ano
     setShowModal(false);
+    
+    // Sync city to user profile if logged in
+    try {
+      const cookies = document.cookie.split(';');
+      const sessionCookie = cookies.find(c => c.trim().startsWith('token='));
+      if (sessionCookie) {
+        const token = sessionCookie.split('=')[1];
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3333/api';
+        await fetch(`${apiUrl}/users/profile`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({ city: cityName })
+        });
+      }
+    } catch (e) {
+      console.error('Failed to sync city to profile', e);
+    }
+    
     router.refresh();
   };
 

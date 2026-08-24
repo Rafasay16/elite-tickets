@@ -147,8 +147,25 @@ async function main() {
 
   const uniqueCities = ['Campina Grande', 'João Pessoa', 'Recife', 'São Paulo', 'Rio de Janeiro'];
 
+  const exactRatings: Record<string, string> = {
+    'Homem-Aranha: Um Novo Dia': '12',
+    'Backrooms': '16',
+    'Supergirl': '12'
+  };
+
+  const ratings = ['Livre', '10', '12', '14', '16', '18'];
+
   for (const evt of allEvents) {
     const numCities = Math.floor(Math.random() * 3) + 2;
+    
+    let eventRating = ratings[Math.floor(Math.random() * ratings.length)] as string;
+    for (const [key, rating] of Object.entries(exactRatings)) {
+      if (evt.title.toLowerCase().includes(key.toLowerCase())) {
+        eventRating = rating;
+        break;
+      }
+    }
+
     const eventCities = new Set<string>();
     eventCities.add('Campina Grande');
     while (eventCities.size < numCities) {
@@ -169,6 +186,7 @@ async function main() {
           price: evt.price,
           capacity: 100,
           type: evt.type,
+          rating: eventRating,
           organizerId: organizador.id
         }
       });
@@ -188,6 +206,7 @@ async function main() {
       price: 150.0,
       capacity: 500,
       type: 'SHOW',
+      rating: 'Livre',
       organizerId: organizador.id
     },
     {
@@ -201,6 +220,7 @@ async function main() {
       price: 100.0,
       capacity: 500,
       type: 'SHOW',
+      rating: '16',
       organizerId: organizador.id
     },
     {
@@ -214,6 +234,7 @@ async function main() {
       price: 350.0,
       capacity: 500,
       type: 'SHOW',
+      rating: '18',
       organizerId: organizador.id
     }
   ];
