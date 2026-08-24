@@ -31,7 +31,7 @@ function mapCertification(cert) {
   if (!cert) return '14'; // Padrão se não achar
   
   const cleanCert = cert.trim().toUpperCase();
-  if (cleanCert === 'L') return 'Livre';
+  if (cleanCert === 'L' || cleanCert === 'LIVRE') return 'Livre';
   if (cleanCert === '10') return '10';
   if (cleanCert === '12') return '12';
   if (cleanCert === '14') return '14';

@@ -1,26 +1,37 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-const RATINGS = ['Livre', '10', '12', '14', '16', '18'];
-
 async function main() {
   const events = await prisma.event.findMany();
   console.log(`Encontrados ${events.length} eventos para atualizar.`);
 
   for (const event of events) {
-    let randomRating;
+    let newRating = '14'; // Padrão
+    const title = event.title.toLowerCase();
+
     if (event.type === 'SHOW') {
-      // Shows geralmente são 16 ou 18, às vezes 14
-      randomRating = ['14', '16', '16', '18', '18'][Math.floor(Math.random() * 5)];
+      newRating = '16';
     } else {
-      // Filmes podem ser qualquer um
-      randomRating = RATINGS[Math.floor(Math.random() * RATINGS.length)];
+      if (title.includes('minion') || title.includes('monstro') || title.includes('divertida') || title.includes('toy story') || title.includes('mario') || title.includes('moana') || title.includes('rei leão') || title.includes('frozen') || title.includes('shrek') || title.includes('meu malvado')) {
+        newRating = 'Livre';
+      } else if (title.includes('deadpool') || title.includes('alien') || title.includes('coringa') || title.includes('joker') || title.includes('saw') || title.includes('jogos mortais') || title.includes('terror') || title.includes('massacre')) {
+        newRating = '18';
+      } else if (title.includes('wolverine') || title.includes('gladiador') || title.includes('matrix')) {
+        newRating = '16';
+      } else if (title.includes('venom') || title.includes('batman') || title.includes('vingadores') || title.includes('avengers') || title.includes('spider-man') || title.includes('aranha')) {
+        newRating = '12';
+      } else {
+        newRating = '14';
+      }
     }
 
-    await prisma.event.update({
-      where: { id: event.id },
-      data: { rating: randomRating }
-    });
+    if (event.rating !== newRating) {
+      await prisma.event.update({
+        where: { id: event.id },
+        data: { rating: newRating }
+      });
+      console.log(` -> Atualizado: ${event.title} para ${newRating}`);
+    }
   }
 
   console.log('Classificações indicativas atualizadas com sucesso!');
