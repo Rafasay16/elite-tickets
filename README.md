@@ -113,6 +113,8 @@ Standardized authentication credentials for development testing:
 - **Client Role:**
   - Email: `rafinha@gmail.com`
   - Password: `123456`
+  - Email: `reuel@gmail.com` (Nova conta de teste)
+  - Password: `123456`
 - **Organizer Role:**
   - Email: `admin@admin.com`
   - Password: `123456`
@@ -122,6 +124,15 @@ Standardized authentication credentials for development testing:
 - **Super Administrator Role:**
   - Email: `superadmin@elite.com`
   - Password: `123456`
+
+## Troubleshooting / Resolução de Problemas
+
+Caso algo não esteja funcionando conforme o esperado ao configurar ou executar a aplicação, verifique os seguintes pontos:
+
+1. **Erro de conexão com o banco de dados:** Certifique-se de que a string de conexão no `.env` do backend está correta e que o IP da sua máquina está autorizado no provedor de banco de dados (ex: Supabase).
+2. **Falha ao rodar o Frontend:** Verifique se a variável `NEXT_PUBLIC_API_URL` está apontando corretamente para `http://localhost:3333` e se o servidor backend está rodando simultaneamente.
+3. **Eventos não aparecem na tela:** O banco de dados pode estar vazio. Certifique-se de rodar o comando de seed (`npx tsx prisma/seed.ts` dentro da pasta `backend`).
+4. **Login falha:** Verifique se o seed foi executado. As senhas de teste são sempre `123456`. Se o problema persistir, crie uma nova conta pelo próprio fluxo de cadastro do aplicativo.
 
 ## License
 
