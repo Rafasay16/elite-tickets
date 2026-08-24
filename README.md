@@ -140,7 +140,3 @@ As part of the project's current scope and development constraints, the followin
 - **Payment Processing:** The checkout process is a mock simulation. No real financial transactions are processed, and credit card data is not sent to any external gateway.
 - **Email Notifications:** The system does not currently send real emails for account creation or ticket purchases. Tickets and QR Codes must be viewed directly within the application's user dashboard.
 - **Responsiveness:** While the application is designed to be responsive, some complex administrative data tables might require horizontal scrolling on smaller mobile devices.
-
-## License
-
-This software architecture and its implementations are proprietary and confidential. Unauthorized distribution or modification is prohibited.
