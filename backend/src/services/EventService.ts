@@ -1,6 +1,7 @@
 import prisma from '../models/prisma';
 import QRCode from 'qrcode';
 import jwt from 'jsonwebtoken';
+import { TMDBService } from './TMDBService';
 
 export class EventService {
   static async listAll(city?: string) {
@@ -44,6 +45,13 @@ export class EventService {
       throw new Error(`Limite atingido (${organizador.eventLimit} eventos).`);
     }
 
+    let rating = 'Livre'; // Padrão
+    // Verifica se é um filme (não começa com SHOW) e se tem ID
+    const isMovie = !data.externalId || !data.externalId.startsWith('SHOW');
+    if (isMovie && data.externalId) {
+      rating = await TMDBService.getMovieRating(data.externalId);
+    }
+
     const event = await prisma.event.create({
       data: {
         externalId: data.externalId,
@@ -58,7 +66,8 @@ export class EventService {
         price: parseFloat(data.price),
         capacity: parseInt(data.capacity),
         maxTicketsPerUser: parseInt(data.maxTicketsPerUser),
-        organizerId: organizador.id
+        organizerId: organizador.id,
+        rating
       }
     });
 

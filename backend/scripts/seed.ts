@@ -62,7 +62,7 @@ async function fetchShows() {
     const res = await fetch(`https://app.ticketmaster.com/discovery/v2/events.json?apikey=${apiKey}&countryCode=BR&classificationName=music&size=20`);
     const data = await res.json();
     if (!data._embedded || !data._embedded.events) return [];
-    
+
     return data._embedded.events.map((event: any, index: number) => {
       // Pega a melhor imagem 16:9
       const image = event.images?.find((img: any) => img.ratio === '16_9') || event.images?.[0];
@@ -94,8 +94,8 @@ async function main() {
   const organizador = await prisma.user.upsert({
     where: { email: 'admin@admin.com' },
     update: { isActive: true },
-    create: { 
-      name: 'Admin Elite', 
+    create: {
+      name: 'Admin Elite',
       email: 'admin@admin.com',
       password: hashedPassword,
       role: 'ORGANIZER',
@@ -131,11 +131,11 @@ async function main() {
   console.log({ organizador, superAdmin, porteiro });
 
   const cliente1 = await prisma.user.create({
-    data: { 
-      name: 'Rafael Cliente', 
-      email: 'rafinha@gmail.com', 
+    data: {
+      name: 'Rafael Cliente',
+      email: 'rafinha@gmail.com',
       password: await bcrypt.hash('123456', 10),
-      role: 'CLIENT' 
+      role: 'CLIENT'
     }
   })
 
@@ -158,7 +158,7 @@ async function main() {
 
   for (const evt of allEvents) {
     const numCities = Math.floor(Math.random() * 3) + 2;
-    
+
     let eventRating = ratings[Math.floor(Math.random() * ratings.length)] as string;
     for (const [key, rating] of Object.entries(exactRatings)) {
       if (evt.title.toLowerCase().includes(key.toLowerCase())) {
@@ -181,7 +181,7 @@ async function main() {
           title: evt.title,
           posterUrl: evt.posterUrl,
           backdropUrl: evt.backdropUrl,
-          date: new Date(Date.now() + sessionDateOffset * 24 * 60 * 60 * 1000), 
+          date: new Date(Date.now() + sessionDateOffset * 24 * 60 * 60 * 1000),
           location: city === 'Campina Grande' ? (evt.type === 'MOVIE' ? 'Cine Araújo Campina Grande' : 'Parque do Povo') : evt.location,
           city: city,
           price: evt.price,
@@ -207,7 +207,7 @@ async function main() {
       price: 150.0,
       capacity: 500,
       type: 'SHOW',
-      rating: 'Livre',
+      rating: '16',
       organizerId: organizador.id
     },
     {
