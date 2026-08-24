@@ -9,7 +9,7 @@ export default function LogoutButton() {
   };
 
   return (
-    <button onClick={handleLogout} className="btn" style={{ marginLeft: '1rem', padding: '0.4rem 1rem', fontSize: '0.875rem' }}>
+    <button onClick={handleLogout} className="btn btn-secondary" style={{ marginLeft: '1rem', padding: '0.4rem 1rem', fontSize: '0.875rem' }}>
       Sair
     </button>
   );
