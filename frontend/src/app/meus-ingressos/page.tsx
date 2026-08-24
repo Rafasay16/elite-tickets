@@ -38,16 +38,10 @@ export default async function MeusIngressos({ searchParams }: { searchParams: { 
     }
   }
 
-  // Gerar Data URLs para os QR Codes baseados no ID da reserva
-  const reservationsWithQr = await Promise.all(
-    reservations.map(async (res) => {
-      const qrDataUrl = await QRCode.toDataURL(res.id, {
-        color: { dark: '#0f172a', light: '#ffffff' },
-        margin: 2
-      });
-      return { ...res, qrDataUrl };
-    })
-  );
+  const reservationsWithQr = reservations.map((res) => ({
+    ...res,
+    qrDataUrl: res.qrCodeUrl
+  }));
 
   return (
     <main className="container" style={{ padding: '4rem 1.5rem' }}>
