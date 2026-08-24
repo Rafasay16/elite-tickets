@@ -113,7 +113,7 @@ Standardized authentication credentials for development testing:
 - **Client Role:**
   - Email: `rafinha@gmail.com`
   - Password: `123456`
-  - Email: `reuel@gmail.com` (Nova conta de teste)
+  - Email: `reuel@gmail.com` (New test account)
   - Password: `123456`
 - **Organizer Role:**
   - Email: `admin@admin.com`
@@ -125,14 +125,14 @@ Standardized authentication credentials for development testing:
   - Email: `superadmin@elite.com`
   - Password: `123456`
 
-## Troubleshooting / Resolução de Problemas
+## Troubleshooting
 
-Caso algo não esteja funcionando conforme o esperado ao configurar ou executar a aplicação, verifique os seguintes pontos:
+If something is not working as expected when setting up or running the application, check the following points:
 
-1. **Erro de conexão com o banco de dados:** Certifique-se de que a string de conexão no `.env` do backend está correta e que o IP da sua máquina está autorizado no provedor de banco de dados (ex: Supabase).
-2. **Falha ao rodar o Frontend:** Verifique se a variável `NEXT_PUBLIC_API_URL` está apontando corretamente para `http://localhost:3333` e se o servidor backend está rodando simultaneamente.
-3. **Eventos não aparecem na tela:** O banco de dados pode estar vazio. Certifique-se de rodar o comando de seed (`npx tsx prisma/seed.ts` dentro da pasta `backend`).
-4. **Login falha:** Verifique se o seed foi executado. As senhas de teste são sempre `123456`. Se o problema persistir, crie uma nova conta pelo próprio fluxo de cadastro do aplicativo.
+1. **Database connection error:** Ensure that the connection string in the backend's `.env` file is correct and that your machine's IP is authorized in the database provider (e.g., Supabase).
+2. **Frontend fails to run:** Verify if the `NEXT_PUBLIC_API_URL` variable is pointing correctly to `http://localhost:3333` and if the backend server is running simultaneously.
+3. **Events do not appear on the screen:** The database might be empty. Make sure to run the seed command (`npx tsx prisma/seed.ts` inside the `backend` folder).
+4. **Login fails:** Check if the database was seeded. Test passwords are always `123456`. If the problem persists, create a new account through the application's registration flow.
 
 ## License
 
