@@ -94,7 +94,7 @@ export class CheckoutService {
       include: { seat: true, event: true }
     });
 
-    if (!reservation) throw new Error('Inválido');
+    if (!reservation) throw new Error(`Inválido: Não encontrado (Buscando: ${searchId})`);
     if (reservation.eventId !== eventId) throw new Error('Evento errado');
     if (reservation.status === 'USED') throw new Error('JÁ UTILIZADO');
     if (reservation.status !== 'PAID') throw new Error('Ingresso não pago ou cancelado.');
