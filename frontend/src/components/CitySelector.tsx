@@ -83,10 +83,21 @@ export default function CitySelector({ initialCity }: { initialCity: string }) {
       } finally {
         setLoadingGeo(false);
       }
-    }, (error) => {
-      setLoadingGeo(false);
-      console.error('Erro Geolocation:', error);
-      alert('Não foi possível obter sua localização (Tempo esgotado ou bloqueado pelo sistema). Selecione o estado e a cidade manualmente.');
+    }, async (error) => {
+      console.warn('Erro Geolocation, tentando fallback por IP:', error.message);
+      try {
+        const ipRes = await fetch('https://ipinfo.io/json');
+        if (!ipRes.ok) throw new Error('Falha no ipinfo');
+        const ipData = await ipRes.json();
+        if (ipData && ipData.city) {
+          handleSaveCity(ipData.city);
+        } else {
+          throw new Error('Cidade não encontrada no IP');
+        }
+      } catch (ipErr) {
+        setLoadingGeo(false);
+        alert('Não foi possível obter sua localização (GPS bloqueado e fallback de IP falhou). Selecione o estado e a cidade manualmente.');
+      }
     }, {
       timeout: 15000, // Aumentado para 15 segundos
       enableHighAccuracy: false // Definido como false pois só precisamos da cidade, o GPS de alta precisão causa muito timeout
