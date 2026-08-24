@@ -17,6 +17,7 @@
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 1.5rem;
+  gap: 2rem;
 }
 
 .logo {
@@ -26,6 +27,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  flex-shrink: 0;
 }
 
 .logoIcon {
