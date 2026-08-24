@@ -9,6 +9,7 @@ type Event = {
   id: string;
   title: string;
   category: string;
+  type: string;
   date: string;
   location: string;
   status: string;
@@ -346,6 +347,11 @@ export default function OrganizadorDashboard() {
     return days;
   };
 
+  const getDisplayCategory = (evt: Event) => {
+    if (evt.category) return evt.category;
+    return evt.type === 'MOVIE' ? 'Filme' : 'Show';
+  };
+
   const filteredEvents = events.filter(evt => {
     let matchesDate = true;
     let matchesCategory = true;
@@ -356,16 +362,16 @@ export default function OrganizadorDashboard() {
     }
     
     if (categoryFilter) {
-      matchesCategory = (evt.category || 'Geral') === categoryFilter;
+      matchesCategory = getDisplayCategory(evt) === categoryFilter;
     }
     
     return matchesDate && matchesCategory;
   });
 
-  const categories = Array.from(new Set(events.map(e => e.category || 'Geral')));
+  const categories = Array.from(new Set(events.map(e => getDisplayCategory(e))));
 
   const groupedEvents = filteredEvents.reduce((acc, evt) => {
-    const cat = evt.category || 'Geral';
+    const cat = getDisplayCategory(evt);
     if (!acc[cat]) acc[cat] = [];
     acc[cat].push(evt);
     return acc;
@@ -458,7 +464,7 @@ export default function OrganizadorDashboard() {
                           <h3 style={{ marginBottom: '0.5rem', paddingRight: '4rem' }}>{evt.title}</h3>
                         </div>
                         <span style={{ display: 'inline-block', padding: '0.2rem 0.5rem', background: 'rgba(255,255,255,0.1)', borderRadius: '4px', fontSize: '0.75rem', marginBottom: '1rem' }}>
-                          {evt.category || 'Geral'}
+                          {getDisplayCategory(evt)}
                         </span>
                         
                         <p className="text-secondary" style={{ fontSize: '0.875rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'center' }}>
