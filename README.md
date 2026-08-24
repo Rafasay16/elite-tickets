@@ -134,6 +134,13 @@ If something is not working as expected when setting up or running the applicati
 3. **Events do not appear on the screen:** The database might be empty. Make sure to run the seed command (`npx tsx prisma/seed.ts` inside the `backend` folder).
 4. **Login fails:** Check if the database was seeded. Test passwords are always `123456`. If the problem persists, create a new account through the application's registration flow.
 
+## Known Issues and Limitations
+
+As part of the project's current scope and development constraints, the following limitations exist:
+- **Payment Processing:** The checkout process is a mock simulation. No real financial transactions are processed, and credit card data is not sent to any external gateway.
+- **Email Notifications:** The system does not currently send real emails for account creation or ticket purchases. Tickets and QR Codes must be viewed directly within the application's user dashboard.
+- **Responsiveness:** While the application is designed to be responsive, some complex administrative data tables might require horizontal scrolling on smaller mobile devices.
+
 ## License
 
 This software architecture and its implementations are proprietary and confidential. Unauthorized distribution or modification is prohibited.
