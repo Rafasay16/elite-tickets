@@ -87,7 +87,7 @@ export class CheckoutService {
       searchId = qrCode;
     }
     
-    searchId = searchId.replace('#', '').toLowerCase();
+    searchId = searchId.trim().replace('#', '').toLowerCase();
 
     const reservation = await prisma.reservation.findFirst({
       where: { id: { startsWith: searchId } },
