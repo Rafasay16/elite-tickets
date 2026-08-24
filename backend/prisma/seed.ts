@@ -117,13 +117,14 @@ async function main() {
 
   const porteiro = await prisma.user.upsert({
     where: { email: 'portaria@elite.com' },
-    update: { isActive: true },
+    update: { isActive: true, creatorId: organizador.id },
     create: {
       name: 'Porteiro Principal',
       email: 'portaria@elite.com',
       password: hashedPassword,
       role: 'PORTARIA',
       isActive: true,
+      creatorId: organizador.id,
     }
   });
 
