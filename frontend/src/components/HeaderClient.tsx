@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
@@ -28,6 +29,7 @@ export default function HeaderClient({ session, photoUrl, currentCity }: HeaderC
   const pathname = usePathname();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const defaultAvatar = session?.name 
@@ -36,6 +38,10 @@ export default function HeaderClient({ session, photoUrl, currentCity }: HeaderC
 
   const [avatarUrl, setAvatarUrl] = useState<string>(photoUrl || defaultAvatar);
   const [imgError, setImgError] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Sync avatar dynamically on mount and route change
   useEffect(() => {
@@ -70,6 +76,18 @@ export default function HeaderClient({ session, photoUrl, currentCity }: HeaderC
       syncProfile();
     }
   }, [photoUrl, session, pathname]);
+
+  // Lock body scroll when drawer is open
+  useEffect(() => {
+    if (drawerOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [drawerOpen]);
 
   // Close dropdown on click outside
   useEffect(() => {
@@ -253,7 +271,7 @@ export default function HeaderClient({ session, photoUrl, currentCity }: HeaderC
                   </div>
 
                   <Link href="/perfil" className={styles.dropdownItem} onClick={() => setDropdownOpen(false)}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                       <circle cx="12" cy="7" r="4" />
                     </svg>
@@ -262,7 +280,7 @@ export default function HeaderClient({ session, photoUrl, currentCity }: HeaderC
 
                   {session.role === 'CLIENT' && (
                     <Link href="/meus-ingressos" className={styles.dropdownItem} onClick={() => setDropdownOpen(false)}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                         <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
                         <line x1="16" y1="2" x2="16" y2="6" />
                         <line x1="8" y1="2" x2="8" y2="6" />
@@ -273,7 +291,7 @@ export default function HeaderClient({ session, photoUrl, currentCity }: HeaderC
 
                   {session.role === 'ORGANIZER' && (
                     <Link href="/admin" className={styles.dropdownItem} onClick={() => setDropdownOpen(false)}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                         <rect x="3" y="3" width="7" height="7" />
                         <rect x="14" y="3" width="7" height="7" />
                         <rect x="14" y="14" width="7" height="7" />
@@ -285,7 +303,7 @@ export default function HeaderClient({ session, photoUrl, currentCity }: HeaderC
 
                   {session.role === 'SUPER_ADMIN' && (
                     <Link href="/super-admin" className={styles.dropdownItem} onClick={() => setDropdownOpen(false)}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                         <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
                       </svg>
                       Painel Super Admin
@@ -294,7 +312,7 @@ export default function HeaderClient({ session, photoUrl, currentCity }: HeaderC
 
                   {(session.role === 'PORTARIA' || session.role === 'ORGANIZER' || session.role === 'SUPER_ADMIN') && (
                     <Link href="/portaria" className={styles.dropdownItem} onClick={() => setDropdownOpen(false)}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                         <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
                         <circle cx="12" cy="12" r="3" />
                       </svg>
@@ -303,7 +321,7 @@ export default function HeaderClient({ session, photoUrl, currentCity }: HeaderC
                   )}
 
                   <button type="button" onClick={handleLogout} className={`${styles.dropdownItem} ${styles.dropdownItemLogout}`}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
                       <polyline points="16 17 21 12 16 7" />
                       <line x1="21" y1="12" x2="9" y2="12" />
@@ -337,8 +355,8 @@ export default function HeaderClient({ session, photoUrl, currentCity }: HeaderC
         </div>
       </div>
 
-      {/* GAVETA LATERAL MOBILE (DRAWER COM TODOS OS BOTÕES) */}
-      {drawerOpen && (
+      {/* GAVETA LATERAL MOBILE RENDERIZADA VIA PORTAL DIRETAMENTE NO BODY */}
+      {mounted && drawerOpen && createPortal(
         <div className={styles.mobileDrawerOverlay} onClick={() => setDrawerOpen(false)}>
           <div className={styles.mobileDrawer} onClick={(e) => e.stopPropagation()}>
             <div>
@@ -346,7 +364,7 @@ export default function HeaderClient({ session, photoUrl, currentCity }: HeaderC
                 <div className={styles.logo}>
                   <div className={styles.logoIcon}>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2z" />
+                      <path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2 2z" />
                     </svg>
                   </div>
                   <span className={styles.logoText}>Elite<span className={styles.logoHighlight}>Tickets</span></span>
@@ -502,7 +520,7 @@ export default function HeaderClient({ session, photoUrl, currentCity }: HeaderC
                   type="button" 
                   onClick={handleLogout} 
                   className="btn btn-secondary" 
-                  style={{ width: '100%', borderColor: '#ef4444', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                  style={{ width: '100%', borderColor: '#ef4444', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '0.75rem' }}
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
@@ -518,7 +536,8 @@ export default function HeaderClient({ session, photoUrl, currentCity }: HeaderC
               )}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </header>
   );
