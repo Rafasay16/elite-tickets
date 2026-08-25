@@ -150,9 +150,17 @@ export class CheckoutService {
     if (reservation.status !== 'PAID') throw new Error('Ingresso não pago ou cancelado.');
 
     const scannedAt = new Date();
+    let validScannedById: string | null = null;
+    if (userId) {
+      try {
+        const staffUser = await prisma.user.findUnique({ where: { id: userId } });
+        if (staffUser) validScannedById = userId;
+      } catch {}
+    }
+
     await prisma.reservation.update({
       where: { id: reservation.id },
-      data: { status: 'USED', scannedAt, scannedById: userId }
+      data: { status: 'USED', scannedAt, scannedById: validScannedById }
     });
 
     return {
