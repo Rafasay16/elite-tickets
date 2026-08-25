@@ -405,7 +405,7 @@ export default function PortariaPage() {
                 border: '1px solid rgba(255, 255, 255, 0.08)'
               }}>
                 <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
-                  {result.status === 'warning' ? 'Liberado Anteriormente Em' : 'Hora da Liberação'}
+                  {result.status === 'warning' ? 'Liberado Anteriormente às' : 'Hora da Liberação'}
                 </div>
                 <div style={{ 
                   fontSize: '1.25rem', 

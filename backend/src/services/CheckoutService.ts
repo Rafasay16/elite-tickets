@@ -94,7 +94,9 @@ export class CheckoutService {
     searchId = searchId.trim().replace(/^#+/, '').toLowerCase();
 
     const reservation = await prisma.reservation.findFirst({
-      where: { id: { startsWith: searchId } },
+      where: { 
+        id: { startsWith: searchId, mode: 'insensitive' } 
+      },
       include: {
         seat: true,
         event: true,
@@ -105,10 +107,10 @@ export class CheckoutService {
     if (!reservation) throw new Error(`Inválido: Não encontrado (Buscando: ${searchId})`);
     if (reservation.eventId !== eventId) throw new Error('Evento errado');
     
-    let customerName: string | undefined = tokenGuestName || reservation.user?.name;
+    let customerName: string | undefined = tokenGuestName?.trim() || reservation.user?.name?.trim();
     if (!customerName && reservation.userId) {
       const u = await prisma.user.findUnique({ where: { id: reservation.userId } });
-      customerName = u?.name || u?.email;
+      customerName = u?.name?.trim() || u?.email?.trim();
     }
     const finalCustomerName = customerName || 'Titular do Ingresso';
     
