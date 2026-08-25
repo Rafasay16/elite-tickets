@@ -193,17 +193,21 @@ export default function HeaderClient({ session, photoUrl, currentCity }: HeaderC
           )}
         </nav>
 
-        {/* FERRAMENTAS & PERFIL NA DIREITA */}
+        {/* FERRAMENTAS & PERFIL */}
         <div className={styles.actionsRight}>
-          <div className={styles.toolsGroup}>
-            <SearchModal />
+          
+          {/* Busca visível em Desktop e Mobile */}
+          <SearchModal />
+
+          {/* Ferramentas que aparecem apenas no Desktop */}
+          <div className={styles.desktopOnly}>
             <CitySelector initialCity={currentCity} />
             <ThemeToggle />
           </div>
 
           <div className={styles.divider} />
 
-          {/* ESTADO DO USUÁRIO */}
+          {/* PERFIL DESKTOP */}
           {session ? (
             <div className={styles.userMenuWrapper} ref={dropdownRef}>
               <button 
@@ -310,19 +314,21 @@ export default function HeaderClient({ session, photoUrl, currentCity }: HeaderC
               )}
             </div>
           ) : (
-            <Link href="/login" className="btn btn-primary" style={{ padding: '0.45rem 1.4rem', fontSize: '0.9rem' }}>
-              Entrar
-            </Link>
+            <div className={styles.desktopOnly}>
+              <Link href="/login" className="btn btn-primary" style={{ padding: '0.45rem 1.4rem', fontSize: '0.9rem' }}>
+                Entrar
+              </Link>
+            </div>
           )}
 
-          {/* BOTÃO HAMBÚRGUER MOBILE */}
+          {/* BOTÃO HAMBÚRGUER MOBILE (OS TRÊS TRACINHOS) */}
           <button 
             type="button" 
             className={styles.mobileToggle}
             onClick={() => setDrawerOpen(true)}
-            aria-label="Abrir menu"
+            aria-label="Abrir menu de navegação"
           >
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <line x1="3" y1="12" x2="21" y2="12" />
               <line x1="3" y1="6" x2="21" y2="6" />
               <line x1="3" y1="18" x2="21" y2="18" />
@@ -331,7 +337,7 @@ export default function HeaderClient({ session, photoUrl, currentCity }: HeaderC
         </div>
       </div>
 
-      {/* GAVETA LATERAL MOBILE (DRAWER) */}
+      {/* GAVETA LATERAL MOBILE (DRAWER COM TODOS OS BOTÕES) */}
       {drawerOpen && (
         <div className={styles.mobileDrawerOverlay} onClick={() => setDrawerOpen(false)}>
           <div className={styles.mobileDrawer} onClick={(e) => e.stopPropagation()}>
@@ -345,18 +351,43 @@ export default function HeaderClient({ session, photoUrl, currentCity }: HeaderC
                   </div>
                   <span className={styles.logoText}>Elite<span className={styles.logoHighlight}>Tickets</span></span>
                 </div>
-                <button type="button" className={styles.drawerCloseBtn} onClick={() => setDrawerOpen(false)}>
+                <button type="button" className={styles.drawerCloseBtn} onClick={() => setDrawerOpen(false)} aria-label="Fechar menu">
                   &times;
                 </button>
               </div>
 
-              {/* LISTA DE ROTAS POR PAPEL */}
+              {/* CARD DE USUÁRIO SE ESTIVER LOGADO */}
+              {session && (
+                <div className={styles.drawerUserCard}>
+                  {avatarUrl && !imgError ? (
+                    <Image src={avatarUrl} alt="Avatar" width={40} height={40} className={styles.avatar} unoptimized onError={() => setImgError(true)} />
+                  ) : (
+                    <div className={styles.avatarFallback} style={{ width: 40, height: 40, fontSize: '1rem' }}>
+                      {session.name ? session.name.charAt(0).toUpperCase() : 'U'}
+                    </div>
+                  )}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: '700', fontSize: '0.95rem', color: 'white', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {session.name}
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--accent-neon)', fontWeight: 700, textTransform: 'uppercase' }}>
+                      {getRoleLabel(session.role)}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* LINKS DE NAVEGAÇÃO DA PLATAFORMA */}
               <nav className={styles.drawerNavList}>
                 <Link 
                   href="/" 
                   className={`${styles.drawerNavLink} ${isLinkActive('/') ? styles.drawerNavLinkActive : ''}`}
                 >
-                  <span>Eventos</span>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+                    <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+                  </svg>
+                  <span>Catálogo de Eventos</span>
                 </Link>
 
                 {session && session.role === 'CLIENT' && (
@@ -364,6 +395,11 @@ export default function HeaderClient({ session, photoUrl, currentCity }: HeaderC
                     href="/meus-ingressos" 
                     className={`${styles.drawerNavLink} ${isLinkActive('/meus-ingressos') ? styles.drawerNavLinkActive : ''}`}
                   >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                      <line x1="16" y1="2" x2="16" y2="6" />
+                      <line x1="8" y1="2" x2="8" y2="6" />
+                    </svg>
                     <span>Meus Ingressos</span>
                   </Link>
                 )}
@@ -374,12 +410,22 @@ export default function HeaderClient({ session, photoUrl, currentCity }: HeaderC
                       href="/admin" 
                       className={`${styles.drawerNavLink} ${isLinkActive('/admin') ? styles.drawerNavLinkActive : ''}`}
                     >
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="3" y="3" width="7" height="7" />
+                        <rect x="14" y="3" width="7" height="7" />
+                        <rect x="14" y="14" width="7" height="7" />
+                        <rect x="3" y="14" width="7" height="7" />
+                      </svg>
                       <span>Painel Admin</span>
                     </Link>
                     <Link 
                       href="/portaria" 
                       className={`${styles.drawerNavLink} ${isLinkActive('/portaria') ? styles.drawerNavLinkActive : ''}`}
                     >
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                        <circle cx="12" cy="12" r="3" />
+                      </svg>
                       <span>Portaria</span>
                     </Link>
                   </>
@@ -391,12 +437,19 @@ export default function HeaderClient({ session, photoUrl, currentCity }: HeaderC
                       href="/super-admin" 
                       className={`${styles.drawerNavLink} ${isLinkActive('/super-admin') ? styles.drawerNavLinkActive : ''}`}
                     >
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                      </svg>
                       <span>Painel Super Admin</span>
                     </Link>
                     <Link 
                       href="/portaria" 
                       className={`${styles.drawerNavLink} ${isLinkActive('/portaria') ? styles.drawerNavLinkActive : ''}`}
                     >
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                        <circle cx="12" cy="12" r="3" />
+                      </svg>
                       <span>Portaria</span>
                     </Link>
                   </>
@@ -407,7 +460,11 @@ export default function HeaderClient({ session, photoUrl, currentCity }: HeaderC
                     href="/portaria" 
                     className={`${styles.drawerNavLink} ${isLinkActive('/portaria') ? styles.drawerNavLinkActive : ''}`}
                   >
-                    <span>Portaria</span>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
+                    <span>Controle de Portaria</span>
                   </Link>
                 )}
 
@@ -416,33 +473,46 @@ export default function HeaderClient({ session, photoUrl, currentCity }: HeaderC
                     href="/perfil" 
                     className={`${styles.drawerNavLink} ${isLinkActive('/perfil') ? styles.drawerNavLinkActive : ''}`}
                   >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                      <circle cx="12" cy="7" r="4" />
+                    </svg>
                     <span>Meu Perfil</span>
                   </Link>
                 )}
               </nav>
+
+              {/* SEÇÃO DE PREFERÊNCIAS (CIDADE E TEMA) */}
+              <div className={styles.drawerPreferences}>
+                <div className={styles.drawerPrefRow}>
+                  <span className={styles.drawerPrefLabel}>Sua Cidade</span>
+                  <CitySelector initialCity={currentCity} />
+                </div>
+                <div className={styles.drawerPrefRow}>
+                  <span className={styles.drawerPrefLabel}>Tema Visual</span>
+                  <ThemeToggle />
+                </div>
+              </div>
             </div>
 
             {/* RODAPÉ DO DRAWER MOBILE */}
             <div className={styles.drawerFooter}>
               {session ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    {avatarUrl && !imgError ? (
-                      <Image src={avatarUrl} alt="Avatar" width={36} height={36} className={styles.avatar} unoptimized onError={() => setImgError(true)} />
-                    ) : (
-                      <div className={styles.avatarFallback}>{session.name ? session.name.charAt(0).toUpperCase() : 'U'}</div>
-                    )}
-                    <div>
-                      <div style={{ fontWeight: '700', fontSize: '0.9rem', color: 'white' }}>{session.name}</div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--accent-neon)' }}>{getRoleLabel(session.role)}</div>
-                    </div>
-                  </div>
-                  <button type="button" onClick={handleLogout} className="btn btn-secondary" style={{ width: '100%', borderColor: '#ef4444', color: '#ef4444' }}>
-                    Sair da Conta
-                  </button>
-                </div>
+                <button 
+                  type="button" 
+                  onClick={handleLogout} 
+                  className="btn btn-secondary" 
+                  style={{ width: '100%', borderColor: '#ef4444', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                    <polyline points="16 17 21 12 16 7" />
+                    <line x1="21" y1="12" x2="9" y2="12" />
+                  </svg>
+                  Sair da Conta
+                </button>
               ) : (
-                <Link href="/login" className="btn btn-primary" style={{ width: '100%', textAlign: 'center' }}>
+                <Link href="/login" className="btn btn-primary" style={{ width: '100%', textAlign: 'center', padding: '0.75rem' }}>
                   Entrar na Conta
                 </Link>
               )}
