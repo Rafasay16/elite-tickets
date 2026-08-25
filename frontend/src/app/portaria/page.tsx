@@ -101,6 +101,9 @@ export default function PortariaPage() {
     setLoading(true);
     setResult(null);
 
+    const currentEvent = events.find(ev => ev.id === selectedEventId);
+    const fallbackEventTitle = currentEvent ? currentEvent.title : 'Evento';
+
     try {
       const token = localStorage.getItem('token');
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3333/api';
@@ -117,45 +120,50 @@ export default function PortariaPage() {
       
       if (!res.ok) {
         if (data.error && data.error.includes('JÁ UTILIZADO')) {
+           const seatVal = data.seat || (data.details?.startsWith('Assento:') ? data.details.replace('Assento:', '').trim() : data.details);
            setResult({ 
              status: 'warning', 
-             title: 'Ingresso Já Utilizado!', 
-             customerName: data.customerName || 'Cliente Identificado',
+             title: 'Ingresso Já Utilizado', 
+             customerName: data.customerName || 'Cliente',
              scannedAt: data.scannedAt,
-             seat: data.seat,
-             eventTitle: data.eventTitle,
-             ticketId: data.ticketId,
-             details: 'Este ingresso já realizou o check-in na portaria. Entrada duplicada proibida!' 
+             seat: seatVal,
+             eventTitle: data.eventTitle || fallbackEventTitle,
+             ticketId: data.ticketId || code,
+             details: 'Este ingresso já realizou o check-in na portaria. Entrada duplicada proibida.' 
            });
         } else if (data.error && data.error.includes('Evento errado')) {
            setResult({ 
              status: 'error', 
              title: 'Evento Não Correspondente', 
+             eventTitle: fallbackEventTitle,
              details: 'Este ingresso pertence a outro evento ou sessão diferente da selecionada.' 
            });
         } else {
            setResult({ 
              status: 'error', 
              title: 'Ingresso Inválido', 
+             eventTitle: fallbackEventTitle,
              details: data.error || 'Código ou QR Code não reconhecido no sistema.' 
            });
         }
       } else {
+        const seatVal = data.seat || (data.details?.startsWith('Assento:') ? data.details.replace('Assento:', '').trim() : data.details);
         setResult({ 
           status: 'success', 
           title: 'Acesso Liberado!', 
-          customerName: data.customerName,
+          customerName: data.customerName || 'Cliente',
           scannedAt: data.scannedAt || new Date().toISOString(),
-          seat: data.seat,
-          eventTitle: data.eventTitle,
-          ticketId: data.ticketId,
-          details: data.details || 'Check-in realizado com sucesso.'
+          seat: seatVal,
+          eventTitle: data.eventTitle || fallbackEventTitle,
+          ticketId: data.ticketId || code,
+          details: ''
         });
       }
     } catch (err) {
       setResult({ 
         status: 'error', 
         title: 'Erro de Conexão', 
+        eventTitle: fallbackEventTitle,
         details: 'Não foi possível se comunicar com o servidor. Verifique a rede.' 
       });
     }
@@ -291,7 +299,7 @@ export default function PortariaPage() {
             {/* Botão Fechar no Canto Superior */}
             <button 
               onClick={closeModal}
-              title="Fechar (Esc)"
+              title="Fechar"
               style={{
                 position: 'absolute',
                 top: '1.25rem',
@@ -366,91 +374,87 @@ export default function PortariaPage() {
             </h2>
 
             {/* Grid de Informações com Nome do Cliente, Horário, Assento e Evento */}
-            {(result.customerName || result.scannedAt || result.seat) && (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+              gap: '1rem',
+              margin: '1.5rem 0',
+              textAlign: 'left'
+            }}>
+              {/* Nome do Cliente (Nome e Sobrenome) */}
               <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-                gap: '1rem',
-                margin: '1.5rem 0',
-                textAlign: 'left'
+                background: 'rgba(0, 0, 0, 0.35)',
+                padding: '1rem 1.25rem',
+                borderRadius: '14px',
+                border: '1px solid rgba(255, 255, 255, 0.08)'
               }}>
-                {/* Nome do Cliente (Nome e Sobrenome) */}
-                <div style={{
-                  background: 'rgba(0, 0, 0, 0.35)',
-                  padding: '1rem 1.25rem',
-                  borderRadius: '14px',
-                  border: '1px solid rgba(255, 255, 255, 0.08)'
-                }}>
-                  <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
-                    👤 Cliente / Titular
-                  </div>
-                  <div style={{ fontSize: '1.25rem', fontWeight: '700', color: 'white', wordBreak: 'break-word' }}>
-                    {result.customerName || 'Não identificado'}
-                  </div>
+                <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                  Cliente / Titular
                 </div>
-
-                {/* Horário da Liberação */}
-                <div style={{
-                  background: 'rgba(0, 0, 0, 0.35)',
-                  padding: '1rem 1.25rem',
-                  borderRadius: '14px',
-                  border: '1px solid rgba(255, 255, 255, 0.08)'
-                }}>
-                  <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
-                    🕒 {result.status === 'warning' ? 'Liberado Anteriormente Em' : 'Hora da Liberação'}
-                  </div>
-                  <div style={{ 
-                    fontSize: '1.25rem', 
-                    fontWeight: '700', 
-                    color: result.status === 'success' ? '#34d399' : result.status === 'warning' ? '#fbbf24' : 'white' 
-                  }}>
-                    {formatScannedTime(result.scannedAt).time}
-                  </div>
-                  {formatScannedTime(result.scannedAt).date && (
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                      {formatScannedTime(result.scannedAt).date}
-                    </div>
-                  )}
-                </div>
-
-                {/* Assento */}
-                {result.seat && (
-                  <div style={{
-                    background: 'rgba(0, 0, 0, 0.35)',
-                    padding: '1rem 1.25rem',
-                    borderRadius: '14px',
-                    border: '1px solid rgba(255, 255, 255, 0.08)'
-                  }}>
-                    <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
-                      💺 Assento Reservado
-                    </div>
-                    <div style={{ fontSize: '1.15rem', fontWeight: '700', color: 'white' }}>
-                      {result.seat}
-                    </div>
-                  </div>
-                )}
-
-                {/* Evento & Ticket ID */}
-                <div style={{
-                  background: 'rgba(0, 0, 0, 0.35)',
-                  padding: '1rem 1.25rem',
-                  borderRadius: '14px',
-                  border: '1px solid rgba(255, 255, 255, 0.08)'
-                }}>
-                  <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
-                    🎬 Evento / Código
-                  </div>
-                  <div style={{ fontSize: '1.05rem', fontWeight: '600', color: 'white', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {result.eventTitle || 'Evento Selecionado'}
-                  </div>
-                  {result.ticketId && (
-                    <div style={{ fontSize: '0.75rem', fontFamily: 'monospace', color: 'var(--text-secondary)' }}>
-                      #{result.ticketId.substring(0, 8)}...
-                    </div>
-                  )}
+                <div style={{ fontSize: '1.25rem', fontWeight: '700', color: 'white', wordBreak: 'break-word' }}>
+                  {result.customerName || 'Cliente'}
                 </div>
               </div>
-            )}
+
+              {/* Horário da Liberação */}
+              <div style={{
+                background: 'rgba(0, 0, 0, 0.35)',
+                padding: '1rem 1.25rem',
+                borderRadius: '14px',
+                border: '1px solid rgba(255, 255, 255, 0.08)'
+              }}>
+                <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                  {result.status === 'warning' ? 'Liberado Anteriormente Em' : 'Hora da Liberação'}
+                </div>
+                <div style={{ 
+                  fontSize: '1.25rem', 
+                  fontWeight: '700', 
+                  color: result.status === 'success' ? '#34d399' : result.status === 'warning' ? '#fbbf24' : 'white' 
+                }}>
+                  {formatScannedTime(result.scannedAt).time}
+                </div>
+                {formatScannedTime(result.scannedAt).date && (
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                    {formatScannedTime(result.scannedAt).date}
+                  </div>
+                )}
+              </div>
+
+              {/* Evento & Ticket ID */}
+              <div style={{
+                background: 'rgba(0, 0, 0, 0.35)',
+                padding: '1rem 1.25rem',
+                borderRadius: '14px',
+                border: '1px solid rgba(255, 255, 255, 0.08)'
+              }}>
+                <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                  Evento / Código
+                </div>
+                <div style={{ fontSize: '1.15rem', fontWeight: '600', color: 'white', wordBreak: 'break-word' }}>
+                  {result.eventTitle || 'Evento'}
+                </div>
+                {result.ticketId && (
+                  <div style={{ fontSize: '0.75rem', fontFamily: 'monospace', color: 'var(--text-secondary)', marginTop: '0.15rem' }}>
+                    #{result.ticketId.length > 12 ? result.ticketId.substring(0, 10) + '...' : result.ticketId}
+                  </div>
+                )}
+              </div>
+
+              {/* Assento */}
+              <div style={{
+                background: 'rgba(0, 0, 0, 0.35)',
+                padding: '1rem 1.25rem',
+                borderRadius: '14px',
+                border: '1px solid rgba(255, 255, 255, 0.08)'
+              }}>
+                <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                  Assento Reservado
+                </div>
+                <div style={{ fontSize: '1.15rem', fontWeight: '700', color: 'white' }}>
+                  {result.seat || 'Livre / Pista'}
+                </div>
+              </div>
+            </div>
 
             {/* Detalhes / Alerta de Erro ou Advertência */}
             {result.details && (
@@ -495,7 +499,7 @@ export default function PortariaPage() {
                   : '#dc2626'
               }}
             >
-              Escanear Próximo (Enter / Espaço)
+              Escanear Próximo
             </button>
           </div>
         </div>

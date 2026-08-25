@@ -101,14 +101,20 @@ export class CheckoutService {
     if (!reservation) throw new Error(`Inválido: Não encontrado (Buscando: ${searchId})`);
     if (reservation.eventId !== eventId) throw new Error('Evento errado');
     
-    const customerName = reservation.user?.name || 'Cliente';
+    let customerName: string | undefined = reservation.user?.name;
+    if (!customerName && reservation.userId) {
+      const u = await prisma.user.findUnique({ where: { id: reservation.userId } });
+      customerName = u?.name || u?.email;
+    }
+    const finalCustomerName = customerName || 'Cliente';
+    
     const seatInfo = `Fila ${reservation.seat.row} - Num ${reservation.seat.number}`;
     const eventTitle = reservation.event.title;
 
     if (reservation.status === 'USED') {
       const err: any = new Error('JÁ UTILIZADO');
       err.data = {
-        customerName,
+        customerName: finalCustomerName,
         scannedAt: reservation.scannedAt,
         seat: seatInfo,
         eventTitle,
@@ -127,7 +133,7 @@ export class CheckoutService {
 
     return {
       message: 'Acesso Liberado!',
-      customerName,
+      customerName: finalCustomerName,
       scannedAt,
       seat: seatInfo,
       eventTitle,
