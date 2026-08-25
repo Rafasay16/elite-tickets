@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { getImageUrl } from '@/lib/tmdb';
@@ -12,26 +12,43 @@ type Event = {
   title: string;
   posterUrl: string | null;
   backdropUrl: string | null;
-  date: Date;
+  date: Date | string;
   location: string;
   type: string;
 };
 
 export default function Carousel({ events }: { events: Event[] }) {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+
+  const nextSlide = useCallback(() => {
+    if (events.length <= 1) return;
+    setCurrentIndex((prev) => (prev + 1) % events.length);
+  }, [events.length]);
+
+  const prevSlide = useCallback(() => {
+    if (events.length <= 1) return;
+    setCurrentIndex((prev) => (prev - 1 + events.length) % events.length);
+  }, [events.length]);
 
   useEffect(() => {
-    if (events.length <= 1) return;
+    if (events.length <= 1 || isPaused) return;
     const timer = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % events.length);
-    }, 5000); // Rotação a cada 5 segundos
+      nextSlide();
+    }, 5000);
     return () => clearInterval(timer);
-  }, [events.length]);
+  }, [events.length, isPaused, nextSlide]);
 
   if (events.length === 0) return null;
 
   return (
-    <div className={styles.carouselContainer}>
+    <div 
+      className={styles.carouselContainer}
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+      onTouchStart={() => setIsPaused(true)}
+      onTouchEnd={() => setIsPaused(false)}
+    >
       {events.map((event, index) => (
         <div
           key={event.id}
@@ -46,10 +63,10 @@ export default function Carousel({ events }: { events: Event[] }) {
               className={styles.backdropImage}
               priority={index === 0}
             />
-            <div className={styles.vignette}></div>
+            <div className={styles.vignette} />
           </div>
 
-          {/* Conteudo Principal */}
+          {/* Conteúdo Principal */}
           <div className={styles.content}>
             <div className={styles.posterWrapper}>
               <Image
@@ -62,7 +79,9 @@ export default function Carousel({ events }: { events: Event[] }) {
             </div>
             
             <div className={styles.info}>
-              <span className={styles.badge}>{event.type === 'SHOW' ? 'Show / Festival' : 'Estreia'}</span>
+              <span className={`${styles.badge} ${event.type === 'SHOW' ? styles.badgeShow : ''}`}>
+                {event.type === 'SHOW' ? 'Show / Festival' : 'Estreia em Cartaz'}
+              </span>
               <h1 className={styles.title}>{event.title}</h1>
               <div className={styles.meta}>
                 <span><CalendarIcon /> {new Date(event.date).toLocaleDateString('pt-BR')}</span>
@@ -75,6 +94,33 @@ export default function Carousel({ events }: { events: Event[] }) {
           </div>
         </div>
       ))}
+
+      {/* Botões de Navegação Anterior / Próximo */}
+      {events.length > 1 && (
+        <>
+          <button 
+            type="button"
+            className={`${styles.navBtn} ${styles.prevBtn}`}
+            onClick={prevSlide}
+            aria-label="Slide anterior"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+          </button>
+
+          <button 
+            type="button"
+            className={`${styles.navBtn} ${styles.nextBtn}`}
+            onClick={nextSlide}
+            aria-label="Próximo slide"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </button>
+        </>
+      )}
 
       {/* Indicadores */}
       <div className={styles.indicators}>
