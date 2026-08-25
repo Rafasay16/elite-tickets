@@ -5,8 +5,8 @@ import { EventService } from '../services/EventService';
 export class EventController {
   static async listAll(req: AuthRequest, res: Response) {
     try {
-      const { city } = req.query;
-      const events = await EventService.listAll(city as string);
+      const { city, search } = req.query;
+      const events = await EventService.listAll(city as string, search as string);
       return res.json(events);
     } catch (error: any) {
       return res.status(500).json({ error: error.message });

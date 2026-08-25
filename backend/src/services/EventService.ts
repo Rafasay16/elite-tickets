@@ -4,10 +4,19 @@ import jwt from 'jsonwebtoken';
 import { TMDBService } from './TMDBService';
 
 export class EventService {
-  static async listAll(city?: string) {
+  static async listAll(city?: string, search?: string) {
     const whereClause: any = { status: 'PUBLISHED' };
-    if (city && city !== 'Todo o Brasil') {
+    if (city && city !== 'Todo o Brasil' && city !== 'Todas') {
       whereClause.city = city as string;
+    }
+    if (search && typeof search === 'string' && search.trim()) {
+      const term = search.trim();
+      whereClause.OR = [
+        { title: { contains: term, mode: 'insensitive' } },
+        { description: { contains: term, mode: 'insensitive' } },
+        { category: { contains: term, mode: 'insensitive' } },
+        { location: { contains: term, mode: 'insensitive' } },
+      ];
     }
     const events = await prisma.event.findMany({
       where: whereClause,
