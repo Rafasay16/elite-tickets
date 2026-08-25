@@ -26,6 +26,10 @@ export default async function Header() {
     } catch (e) {}
   }
 
+  if (!photoUrl && session?.name) {
+    photoUrl = `https://api.dicebear.com/9.x/avataaars/svg?seed=${encodeURIComponent(session.name)}`;
+  }
+
   return (
     <HeaderClient
       session={session}

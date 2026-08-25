@@ -30,6 +30,47 @@ export default function HeaderClient({ session, photoUrl, currentCity }: HeaderC
   const [drawerOpen, setDrawerOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  const defaultAvatar = session?.name 
+    ? `https://api.dicebear.com/9.x/avataaars/svg?seed=${encodeURIComponent(session.name)}` 
+    : '';
+
+  const [avatarUrl, setAvatarUrl] = useState<string>(photoUrl || defaultAvatar);
+  const [imgError, setImgError] = useState(false);
+
+  // Sync avatar dynamically on mount and route change
+  useEffect(() => {
+    if (photoUrl) {
+      setAvatarUrl(photoUrl);
+      setImgError(false);
+    } else if (session?.name) {
+      setAvatarUrl(`https://api.dicebear.com/9.x/avataaars/svg?seed=${encodeURIComponent(session.name)}`);
+    }
+
+    if (session) {
+      const syncProfile = async () => {
+        try {
+          const cookies = document.cookie.split(';');
+          const tokenCookie = cookies.find((c) => c.trim().startsWith('token='));
+          if (tokenCookie) {
+            const token = tokenCookie.split('=')[1];
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3333/api';
+            const res = await fetch(`${apiUrl}/users/profile`, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            if (res.ok) {
+              const data = await res.json();
+              if (data.profile?.photoUrl) {
+                setAvatarUrl(data.profile.photoUrl);
+                setImgError(false);
+              }
+            }
+          }
+        } catch (e) {}
+      };
+      syncProfile();
+    }
+  }, [photoUrl, session, pathname]);
+
   // Close dropdown on click outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -172,21 +213,23 @@ export default function HeaderClient({ session, photoUrl, currentCity }: HeaderC
                 aria-expanded={dropdownOpen}
                 aria-haspopup="true"
               >
-                {photoUrl ? (
+                {avatarUrl && !imgError ? (
                   <Image 
-                    src={photoUrl} 
+                    src={avatarUrl} 
                     alt="Avatar" 
                     width={32} 
                     height={32} 
                     className={styles.avatar} 
+                    unoptimized
+                    onError={() => setImgError(true)}
                   />
                 ) : (
                   <div className={styles.avatarFallback}>
-                    {session.name.charAt(0).toUpperCase()}
+                    {session.name ? session.name.charAt(0).toUpperCase() : 'U'}
                   </div>
                 )}
                 <div className={styles.userInfo}>
-                  <span className={styles.userName}>{session.name.split(' ')[0]}</span>
+                  <span className={styles.userName}>{session.name ? session.name.split(' ')[0] : 'Usuário'}</span>
                   <span className={styles.userRoleBadge}>{getRoleLabel(session.role)}</span>
                 </div>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.7 }}>
@@ -384,10 +427,10 @@ export default function HeaderClient({ session, photoUrl, currentCity }: HeaderC
               {session ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    {photoUrl ? (
-                      <Image src={photoUrl} alt="Avatar" width={36} height={36} className={styles.avatar} />
+                    {avatarUrl && !imgError ? (
+                      <Image src={avatarUrl} alt="Avatar" width={36} height={36} className={styles.avatar} unoptimized onError={() => setImgError(true)} />
                     ) : (
-                      <div className={styles.avatarFallback}>{session.name.charAt(0).toUpperCase()}</div>
+                      <div className={styles.avatarFallback}>{session.name ? session.name.charAt(0).toUpperCase() : 'U'}</div>
                     )}
                     <div>
                       <div style={{ fontWeight: '700', fontSize: '0.9rem', color: 'white' }}>{session.name}</div>
