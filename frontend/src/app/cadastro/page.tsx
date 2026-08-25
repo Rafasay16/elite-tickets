@@ -108,7 +108,7 @@ export default function RegisterPage() {
               />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
               <div className={styles.inputGroup} style={{ marginBottom: 0 }}>
                 <label htmlFor="state">Estado (UF)</label>
                 <select

@@ -517,7 +517,7 @@ export default function PortariaPage() {
             }}>
               Código Identificador do Ingresso (ID curto ou UUID):
             </label>
-            <div style={{ display: 'flex', gap: '0.75rem' }}>
+            <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
               <input 
                 type="text" 
                 placeholder="Ex: #TK-8821 ou Código do Ingresso" 
@@ -525,6 +525,7 @@ export default function PortariaPage() {
                 onChange={(e) => setManualCode(e.target.value)}
                 style={{ 
                   flex: 1, 
+                  minWidth: '180px',
                   padding: '0.85rem 1.25rem', 
                   borderRadius: '12px', 
                   border: '1px solid var(--border-glass)', 
@@ -539,7 +540,7 @@ export default function PortariaPage() {
                 type="submit" 
                 className="btn btn-primary" 
                 disabled={loading || !selectedEventId || !manualCode.trim()}
-                style={{ borderRadius: '12px', padding: '0.85rem 1.75rem' }}
+                style={{ borderRadius: '12px', padding: '0.85rem 1.75rem', minWidth: '120px' }}
               >
                 {loading ? 'Validando...' : 'Validar'}
               </button>

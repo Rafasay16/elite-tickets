@@ -467,3 +467,98 @@
   from { transform: translateY(12px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
 }
+
+/* Responsive Media Queries */
+@media (max-width: 768px) {
+  .header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .header button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .kpiGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .kpiCard {
+    padding: 1rem;
+    gap: 0.75rem;
+  }
+
+  .kpiIcon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+  }
+
+  .kpiValue {
+    font-size: 1.3rem;
+  }
+
+  .controlBar {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 1rem;
+    gap: 0.85rem;
+  }
+
+  .searchGroup {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .searchWrapper {
+    max-width: 100%;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .statusFilterGroup {
+    display: flex;
+    overflow-x: auto;
+    padding-bottom: 0.25rem;
+    width: 100%;
+  }
+
+  .tableContainer {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+  }
+
+  .table {
+    min-width: 540px;
+  }
+
+  .th, .td {
+    padding: 0.85rem 1rem;
+  }
+
+  .modalBackdrop {
+    padding: 0.75rem;
+  }
+
+  .modalContent {
+    padding: 1.25rem;
+    border-radius: 16px;
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .kpiGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .title {
+    font-size: 1.75rem;
+  }
+}

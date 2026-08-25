@@ -176,3 +176,43 @@
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+/* Responsive Media Queries */
+@media (max-width: 768px) {
+  .map {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+    max-width: 100%;
+    padding: 0.5rem 0.25rem;
+    margin-bottom: 2rem;
+  }
+
+  .screenContainer {
+    width: 90%;
+    margin-bottom: 2.5rem;
+  }
+
+  .seat {
+    width: 34px;
+    height: 34px;
+    font-size: 0.75rem;
+  }
+
+  .legend {
+    gap: 1rem;
+    flex-wrap: wrap;
+    font-size: 0.8rem;
+  }
+
+  .checkoutBar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1.25rem;
+    padding: 1.25rem;
+  }
+
+  .checkoutBar button {
+    width: 100%;
+  }
+}

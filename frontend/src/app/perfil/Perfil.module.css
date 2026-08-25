@@ -497,12 +497,53 @@
   transition: all 0.2s ease;
 }
 
-.saveBtn:hover:not(:disabled) {
-  background: var(--accent-purple);
-  transform: translateY(-2px);
-}
-
 .saveBtn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+/* Responsive Media Queries */
+@media (max-width: 768px) {
+  .tabsHeader {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 0.5rem;
+    gap: 0.5rem;
+  }
+
+  .tabBtn {
+    padding: 0.55rem 0.9rem;
+    font-size: 0.85rem;
+    white-space: nowrap;
+  }
+
+  .formGrid {
+    padding: 1.25rem;
+  }
+
+  .formRow {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .avatarGrid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+  }
+
+  .creditCard {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    padding: 1.25rem;
+  }
+
+  .saveBar {
+    justify-content: stretch;
+  }
+
+  .saveBtn {
+    width: 100%;
+    justify-content: center;
+  }
 }
