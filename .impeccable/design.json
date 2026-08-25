@@ -1,0 +1,180 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-25T13:00:00.000Z",
+  "title": "Design System: Elite Tickets",
+  "extensions": {
+    "colorMeta": {
+      "electric-sapphire": {
+        "role": "primary",
+        "displayName": "Electric Sapphire",
+        "canonical": "#2563eb",
+        "tonalRamp": ["#1e3a8a", "#1d4ed8", "#2563eb", "#3b82f6", "#60a5fa", "#93c5fd", "#bfdbfe", "#dbeafe"]
+      },
+      "neon-indigo": {
+        "role": "secondary",
+        "displayName": "Neon Indigo",
+        "canonical": "#4f46e5",
+        "tonalRamp": ["#312e81", "#3730a3", "#4338ca", "#4f46e5", "#6366f1", "#818cf8", "#a5b4fc", "#c7d2fe"]
+      },
+      "access-emerald": {
+        "role": "tertiary",
+        "displayName": "Access Emerald",
+        "canonical": "#059669",
+        "tonalRamp": ["#064e3b", "#065f46", "#047857", "#059669", "#10b981", "#34d399", "#6ee7b7", "#a7f3d0"]
+      },
+      "alert-crimson": {
+        "role": "error",
+        "displayName": "Alert Crimson",
+        "canonical": "#dc2626",
+        "tonalRamp": ["#7f1d1d", "#991b1b", "#b91c1c", "#dc2626", "#ef4444", "#f87171", "#fca5a5", "#fecaca"]
+      },
+      "warning-amber": {
+        "role": "warning",
+        "displayName": "Warning Amber",
+        "canonical": "#f59e0b",
+        "tonalRamp": ["#78350f", "#92400e", "#b45309", "#d97706", "#f59e0b", "#fbbf24", "#fcd34d", "#fde68a"]
+      },
+      "midnight-obsidian": {
+        "role": "neutral",
+        "displayName": "Midnight Obsidian",
+        "canonical": "#0f172a",
+        "tonalRamp": ["#020617", "#0f172a", "#1e293b", "#334155", "#475569", "#64748b", "#94a3b8", "#cbd5e1"]
+      },
+      "frosted-slate": {
+        "role": "neutral-surface",
+        "displayName": "Frosted Slate Glass",
+        "canonical": "rgba(30, 41, 59, 0.7)"
+      },
+      "text-primary": {
+        "role": "neutral-text",
+        "displayName": "Text Primary",
+        "canonical": "#f8fafc"
+      },
+      "text-secondary": {
+        "role": "neutral-text-muted",
+        "displayName": "Text Secondary",
+        "canonical": "#94a3b8"
+      },
+      "border-glass": {
+        "role": "neutral-border",
+        "displayName": "Border Glass",
+        "canonical": "rgba(255, 255, 255, 0.1)"
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Hero banners, festival showcases, and primary portal titles." },
+      "headline": { "displayName": "Headline", "purpose": "Modal titles, section headers, and validation result titles." },
+      "title": { "displayName": "Title", "purpose": "Card titles, sector names, and operator module headings." },
+      "body": { "displayName": "Body", "purpose": "Descriptions, event information, instruction paragraphs, and form labels." },
+      "label": { "displayName": "Label / Mono", "purpose": "Monospace navigation tabs, ticket IDs, seat badges, and timestamp readouts." }
+    },
+    "shadows": [
+      { "name": "neon-glow-primary", "value": "0 4px 15px rgba(37, 99, 235, 0.4)", "purpose": "Primary action triggers and active selections." },
+      { "name": "neon-glow-hover", "value": "0 6px 20px rgba(79, 70, 229, 0.4)", "purpose": "Elevated hover state for buttons and chips." },
+      { "name": "glass-panel-ambient", "value": "0 4px 30px rgba(0, 0, 0, 0.1)", "purpose": "Base ambient drop shadow for frosted glass cards." },
+      { "name": "validation-aura", "value": "0 0 50px rgba(16, 185, 129, 0.35), 0 25px 50px rgba(0, 0, 0, 0.8)", "purpose": "High-contrast validation dialog status aura." }
+    ],
+    "motion": [
+      { "name": "ease-standard", "value": "cubic-bezier(0.4, 0, 0.2, 1)", "purpose": "Default easing for all state transitions." },
+      { "name": "ease-hover-lift", "value": "transform 0.3s ease, background 0.3s ease, box-shadow 0.3s ease", "purpose": "Tactile lift on button and card interaction." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" },
+      { "name": "xl", "value": "1280px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "High-impact pill action button with neon sapphire glow.",
+      "html": "<button class=\"ds-btn-primary\">Comprar Ingresso</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; padding: 0.75rem 1.5rem; border-radius: 9999px; font-family: 'Space Grotesk', system-ui, sans-serif; font-weight: 600; font-size: 1rem; color: #f8fafc; background: #2563eb; border: none; cursor: pointer; box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4); transition: all 0.3s ease; } .ds-btn-primary:hover { background: #4f46e5; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(79, 70, 229, 0.4); }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Frosted outline button for secondary choices and filters.",
+      "html": "<button class=\"ds-btn-secondary\">Ver Detalhes</button>",
+      "css": ".ds-btn-secondary { display: inline-flex; align-items: center; justify-content: center; padding: 0.75rem 1.5rem; border-radius: 9999px; font-family: 'Space Grotesk', system-ui, sans-serif; font-weight: 600; font-size: 1rem; color: #f8fafc; background: transparent; border: 1px solid rgba(255, 255, 255, 0.1); cursor: pointer; transition: all 0.3s ease; } .ds-btn-secondary:hover { background: rgba(255, 255, 255, 0.05); border-color: #94a3b8; }"
+    },
+    {
+      "name": "Glass Panel Card",
+      "kind": "card",
+      "refersTo": "card-glass",
+      "description": "Translucent container with 12px backdrop blur and glass border.",
+      "html": "<div class=\"ds-glass-card\"><h3>Festival de Inverno</h3><p>Campina Grande, PB</p></div>",
+      "css": ".ds-glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; padding: 1.5rem; box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1); color: #f8fafc; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; } .ds-glass-card h3 { font-family: 'Space Grotesk', system-ui, sans-serif; font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem; } .ds-glass-card p { color: #94a3b8; font-size: 0.875rem; }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input-field",
+      "description": "Pill form field with glowing electric sapphire focus ring.",
+      "html": "<input class=\"ds-input\" type=\"text\" placeholder=\"Buscar eventos ou artistas...\" />",
+      "css": ".ds-input { width: 100%; padding: 0.75rem 1.5rem; border-radius: 9999px; border: 1px solid rgba(255, 255, 255, 0.1); background: transparent; color: #f8fafc; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; font-size: 1rem; outline: none; transition: all 0.3s ease; } .ds-input:focus { border-color: #2563eb; box-shadow: 0 0 10px rgba(37, 99, 235, 0.4); background: rgba(0, 0, 0, 0.2); } .ds-input::placeholder { color: #94a3b8; }"
+    },
+    {
+      "name": "Seat Map Unit",
+      "kind": "custom",
+      "description": "Ergonomic arena/cinema seat cell with selection state.",
+      "html": "<button class=\"ds-seat ds-seat-selected\">A1</button>",
+      "css": ".ds-seat { width: 40px; height: 40px; border-radius: 8px 8px 4px 4px; display: inline-flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; font-weight: 600; border: none; cursor: pointer; transition: all 0.2s ease; } .ds-seat-available { background: rgba(255, 255, 255, 0.1); color: #f8fafc; border: 1px solid rgba(255, 255, 255, 0.1); } .ds-seat-available:hover { background: rgba(255, 255, 255, 0.2); transform: translateY(-2px); } .ds-seat-selected { background: #2563eb; color: #000; box-shadow: 0 0 15px rgba(37, 99, 235, 0.4); }"
+    },
+    {
+      "name": "Portaria Validation Card",
+      "kind": "custom",
+      "description": "High-contrast tactical check-in status card for entrance scanning.",
+      "html": "<div class=\"ds-validation-card\"><div class=\"ds-val-badge\"><svg width=\"28\" height=\"28\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#10b981\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"20 6 9 17 4 12\"></polyline></svg></div><h2 class=\"ds-val-title\">Acesso Liberado!</h2><p class=\"ds-val-user\">Carlos Silva</p><p class=\"ds-val-seat\">Fila C - Assento 14</p></div>",
+      "css": ".ds-validation-card { background: linear-gradient(180deg, rgba(16, 185, 129, 0.15) 0%, rgba(15, 23, 42, 0.95) 100%); border: 2px solid #10b981; box-shadow: 0 0 50px rgba(16, 185, 129, 0.35); border-radius: 24px; padding: 2rem; text-align: center; color: #f8fafc; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; } .ds-val-badge { width: 64px; height: 64px; margin: 0 auto 1rem auto; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(16, 185, 129, 0.2); border: 2px solid #10b981; } .ds-val-title { font-family: 'Space Grotesk', system-ui, sans-serif; font-size: 1.75rem; font-weight: 800; color: #10b981; margin-bottom: 0.5rem; } .ds-val-user { font-size: 1.25rem; font-weight: 700; color: #f8fafc; } .ds-val-seat { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: #94a3b8; margin-top: 0.25rem; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Electric Arena",
+    "overview": "Elite Tickets channels the electric atmosphere of live stadium concerts, premier cinema showcases, and vibrant regional Brazilian festivals into a sleek, immersive dark glass interface. Built for high velocity across the entire ticketing lifecycle, the visual system strikes a balance between consumer excitement during event discovery and tactical clarity during high-pressure gatekeeper validations.\n\nThe visual language layers deep obsidian slate foundations (#0f172a) with translucent frosted glass panels (12px backdrop blur) and electric sapphire accents (#2563eb). Micro-interactions are tactile and responsive—buttons elevate with soft luminescence on hover, seat maps provide instant tactile feedback, and validation states radiate unambiguous status feedback in low-light entryways.",
+    "keyCharacteristics": [
+      "Layered Dark Depth: Rich obsidian and slate tones layered with translucent glass panels rather than flat opaque backgrounds.",
+      "Electric Accent Luminescence: Focused royal blue and neon indigo accents paired with soft 15-20px ambient glow filters.",
+      "Role-Calibrated Ergonomics: High-energy discovery for attendees; high-contrast, zero-ambiguity HUD layouts for on-site gatekeepers.",
+      "Tactile Micro-Physics: Smooth translateY transforms, pill-shaped action geometry, and instant spatial selection feedback."
+    ],
+    "rules": [
+      {
+        "name": "The Luminescence Rule",
+        "body": "Ambient glow shadows (0 4px 15px rgba(37, 99, 235, 0.4)) are reserved strictly for interactive triggers, active selections, and live status badges. Inactive surfaces remain subtly bordered.",
+        "section": "colors"
+      },
+      {
+        "name": "The Status Sovereignty Rule",
+        "body": "On access control and validation surfaces (such as /portaria), semantic status colors (Emerald, Amber, Crimson) take 100% precedence over brand blue.",
+        "section": "colors"
+      },
+      {
+        "name": "The Monospace Identifier Rule",
+        "body": "Any ticket ID, transaction hash, QR reference, or exact time measurement must be rendered in JetBrains Mono with uppercase tracking.",
+        "section": "typography"
+      },
+      {
+        "name": "The Frosted Surface Rule",
+        "body": "All elevated containers must declare backdrop-filter: blur(12px) and a 1px solid rgba(255, 255, 255, 0.1) boundary to preserve separation from background graphics.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do use Space Grotesk for titles and action triggers, Plus Jakarta Sans for body copy, and JetBrains Mono for IDs and timestamps.",
+      "Do wrap interactive surfaces in .glass-panel with backdrop-filter: blur(12px) and 1px solid var(--border-glass).",
+      "Do use pill buttons (border-radius: 9999px) with translateY(-2px) and neon glow for primary actions.",
+      "Do provide immediate color and icon contrast on all portaria check-in states (Green = Approved, Yellow = Duplicate, Red = Invalid)."
+    ],
+    "donts": [
+      "Don't use solid opaque gray backgrounds for content containers; preserve the translucent glassmorphism aesthetic.",
+      "Don't use un-styled default browser <select> or calendar inputs; preserve custom SVG arrows and indicator icons.",
+      "Don't apply blue brand luminescence to error or duplicate warning messages.",
+      "Don't clutter operator scanning views with marketing banners or non-essential decorative elements."
+    ]
+  }
+}
