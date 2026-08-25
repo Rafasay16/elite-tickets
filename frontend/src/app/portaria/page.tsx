@@ -29,7 +29,6 @@ export default function PortariaPage() {
   const [events, setEvents] = useState<any[]>([]);
   const [selectedEventId, setSelectedEventId] = useState("");
   const [activeTab, setActiveTab] = useState<'camera' | 'manual'>('camera');
-  const [stats, setStats] = useState({ validatedCount: 0, totalCapacity: 0 });
   const [recentScans, setRecentScans] = useState<RecentScanItem[]>([]);
   const [autoDismissRemaining, setAutoDismissRemaining] = useState(100);
   const [isTimerPaused, setIsTimerPaused] = useState(false);
@@ -93,10 +92,6 @@ export default function PortariaPage() {
           setEvents(data);
           if (data.length > 0) {
             setSelectedEventId(data[0].id);
-            setStats({
-              validatedCount: 0,
-              totalCapacity: data[0].seats?.length || data[0].capacity || 300
-            });
           }
         }
       } catch (e) {}
@@ -104,16 +99,6 @@ export default function PortariaPage() {
     fetchEvents();
   }, []);
 
-  // Update capacity stat when event selection changes
-  useEffect(() => {
-    const ev = events.find(e => e.id === selectedEventId);
-    if (ev) {
-      setStats(prev => ({
-        ...prev,
-        totalCapacity: ev.seats?.length || ev.capacity || 300
-      }));
-    }
-  }, [selectedEventId, events]);
 
   const closeModal = useCallback(() => {
     if (autoDismissTimerRef.current) clearInterval(autoDismissTimerRef.current);
@@ -288,7 +273,6 @@ export default function PortariaPage() {
         };
         setResult(scanRes);
         playAudioFeedback('success');
-        setStats(prev => ({ ...prev, validatedCount: prev.validatedCount + 1 }));
         addRecentScan({
           id: Math.random().toString(),
           ticketId: resolvedTicketId,
@@ -361,10 +345,6 @@ export default function PortariaPage() {
     };
   };
 
-  const checkinPercentage = stats.totalCapacity > 0 
-    ? Math.min(100, Math.round((stats.validatedCount / stats.totalCapacity) * 100))
-    : 0;
-
   return (
     <main className="container" style={{ padding: '2.5rem 1.5rem 5rem 1.5rem', maxWidth: '680px' }}>
       
@@ -432,41 +412,6 @@ export default function PortariaPage() {
             </option>
           ))}
         </select>
-      </div>
-
-      {/* LIVE THROUGHPUT HUD: MÉTRICAS DE ENTRADA */}
-      <div className="glass-panel" style={{ padding: '1.25rem 1.5rem', marginBottom: '1.5rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-secondary)' }}>
-              Acessos Validados
-            </span>
-            <span style={{ fontFamily: 'var(--font-heading-family)', fontSize: '1.75rem', fontWeight: '800', color: '#10b981' }}>
-              {stats.validatedCount} <span style={{ fontSize: '1rem', color: 'var(--text-secondary)', fontWeight: '500' }}>/ {stats.totalCapacity}</span>
-            </span>
-          </div>
-          <div style={{ textAlign: 'right' }}>
-            <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-secondary)' }}>
-              Taxa de Ocupação
-            </span>
-            <div style={{ fontFamily: 'var(--font-heading-family)', fontSize: '1.5rem', fontWeight: '800', color: 'var(--accent-neon)' }}>
-              {checkinPercentage}%
-            </div>
-          </div>
-        </div>
-
-        {/* Barra de Progresso */}
-        <div style={{ width: '100%', height: '8px', background: 'rgba(255, 255, 255, 0.08)', borderRadius: '9999px', overflow: 'hidden' }}>
-          <div style={{ 
-            height: '100%', 
-            width: '100%',
-            transform: `scaleX(${checkinPercentage / 100})`,
-            transformOrigin: 'left',
-            background: 'linear-gradient(90deg, #2563eb 0%, #10b981 100%)', 
-            borderRadius: '9999px',
-            transition: 'transform 0.4s ease'
-          }} />
-        </div>
       </div>
 
       {/* TABS: CÂMERA vs DIGITAÇÃO MANUAL */}
