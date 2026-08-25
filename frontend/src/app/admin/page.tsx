@@ -1,9 +1,13 @@
 'use client';
-import { useState, useEffect } from 'react';
+
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { CalendarIcon, MapPinIcon, GearIcon, TrashIcon } from '@/components/Icons';
 import { EventService } from '@/services/EventService';
 import { maskCEP, maskCurrency, getCurrencyNumber, maskInteger } from '@/utils/masks';
+import { getImageUrl } from '@/lib/tmdb';
+import styles from './Admin.module.css';
 
 type Event = {
   id: string;
@@ -13,6 +17,10 @@ type Event = {
   date: string;
   location: string;
   status: string;
+  posterUrl?: string | null;
+  capacity?: number;
+  price?: number;
+  seats?: any[];
 };
 
 type Seat = {
@@ -25,8 +33,10 @@ type Seat = {
 export default function OrganizadorDashboard() {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
   const [dateFilter, setDateFilter] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
+  const [toastMessage, setToastMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
   const router = useRouter();
 
   // Modal Calendario
@@ -36,7 +46,16 @@ export default function OrganizadorDashboard() {
   // Modal Novo Evento
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
   const [formData, setFormData] = useState({
-    title: '', description: '', category: 'Show', date: '', location: '', cep: '', price: 0, capacity: 50, maxTicketsPerUser: 4, base64Image: ''
+    title: '',
+    description: '',
+    category: 'Show',
+    date: '',
+    location: '',
+    cep: '',
+    price: 0,
+    capacity: 50,
+    maxTicketsPerUser: 4,
+    base64Image: '',
   });
   const [creating, setCreating] = useState(false);
   const [loadingCep, setLoadingCep] = useState(false);
@@ -63,32 +82,12 @@ export default function OrganizadorDashboard() {
   const [porteiroLogs, setPorteiroLogs] = useState<any[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
 
-  useEffect(() => {
-    fetchEvents();
+  const showToast = useCallback((text: string, type: 'success' | 'error' = 'success') => {
+    setToastMessage({ text, type });
+    setTimeout(() => setToastMessage(null), 4000);
   }, []);
 
-  const fetchPorteiros = async () => {
-    setLoadingPorteiros(true);
-    try {
-      const token = localStorage.getItem('token');
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3333/api';
-      const res = await fetch(`${apiUrl}/users/porteiros`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setPorteiros(data);
-      }
-    } catch(e) {}
-    setLoadingPorteiros(false);
-  };
-
-  const openPortariaModal = () => {
-    setIsPortariaModalOpen(true);
-    fetchPorteiros();
-  };
-
-  const fetchEvents = async () => {
+  const fetchEvents = useCallback(async () => {
     try {
       const data = await EventService.listOrganizerEvents();
       setEvents(data);
@@ -97,6 +96,46 @@ export default function OrganizadorDashboard() {
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  useEffect(() => {
+    fetchEvents();
+  }, [fetchEvents]);
+
+  // Global keydown for Escape dismiss on any active modal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsEventModalOpen(false);
+        setIsCortesiaModalOpen(false);
+        setIsPortariaModalOpen(false);
+        setSelectedPorteiroForSettings(null);
+        setIsCalendarModalOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  const fetchPorteiros = async () => {
+    setLoadingPorteiros(true);
+    try {
+      const token = localStorage.getItem('token');
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3333/api';
+      const res = await fetch(`${apiUrl}/users/porteiros`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setPorteiros(data);
+      }
+    } catch (e) {}
+    setLoadingPorteiros(false);
+  };
+
+  const openPortariaModal = () => {
+    setIsPortariaModalOpen(true);
+    fetchPorteiros();
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -104,7 +143,7 @@ export default function OrganizadorDashboard() {
     if (!file) return;
     const reader = new FileReader();
     reader.onloadend = () => {
-      setFormData(prev => ({ ...prev, base64Image: reader.result as string }));
+      setFormData((prev) => ({ ...prev, base64Image: reader.result as string }));
     };
     reader.readAsDataURL(file);
   };
@@ -122,13 +161,25 @@ export default function OrganizadorDashboard() {
         price: Number(formData.price),
         capacity: Number(formData.capacity),
         maxTicketsPerUser: Number(formData.maxTicketsPerUser),
-        posterUrl: formData.base64Image || undefined
+        posterUrl: formData.base64Image || undefined,
       });
-      alert('Evento publicado com sucesso!');
+      showToast('Evento publicado com sucesso!', 'success');
       setIsEventModalOpen(false);
+      setFormData({
+        title: '',
+        description: '',
+        category: 'Show',
+        date: '',
+        location: '',
+        cep: '',
+        price: 0,
+        capacity: 50,
+        maxTicketsPerUser: 4,
+        base64Image: '',
+      });
       fetchEvents();
     } catch (err: any) {
-      alert(err.message);
+      showToast(err.message || 'Erro ao criar evento', 'error');
     }
     setCreating(false);
   };
@@ -136,19 +187,19 @@ export default function OrganizadorDashboard() {
   const fetchAddressByCep = async (cep: string) => {
     const cleanCep = cep.replace(/\D/g, '');
     if (cleanCep.length !== 8) return;
-    
+
     setLoadingCep(true);
     try {
       const res = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
       const data = await res.json();
       if (!data.erro) {
-        setFormData(prev => ({
+        setFormData((prev) => ({
           ...prev,
-          location: `${data.logradouro}, ${data.bairro}, ${data.localidade} - ${data.uf}`
+          location: `${data.logradouro}, ${data.bairro}, ${data.localidade} - ${data.uf}`,
         }));
       }
     } catch (e) {
-      console.error("Erro ao buscar CEP", e);
+      console.error('Erro ao buscar CEP', e);
     } finally {
       setLoadingCep(false);
     }
@@ -156,7 +207,7 @@ export default function OrganizadorDashboard() {
 
   const handleCepChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = maskCEP(e.target.value);
-    setFormData(prev => ({ ...prev, cep: val }));
+    setFormData((prev) => ({ ...prev, cep: val }));
     if (val.replace(/\D/g, '').length === 8) {
       fetchAddressByCep(val);
     }
@@ -166,9 +217,10 @@ export default function OrganizadorDashboard() {
     const newStatus = currentStatus === 'PUBLISHED' ? 'DRAFT' : 'PUBLISHED';
     try {
       await EventService.toggleStatus(id, newStatus);
+      showToast(newStatus === 'PUBLISHED' ? 'Evento ativado!' : 'Evento pausado.', 'success');
       fetchEvents();
     } catch (e: any) {
-      alert(`Erro ao alterar status: ${e.message}`);
+      showToast(`Erro ao alterar status: ${e.message}`, 'error');
     }
   };
 
@@ -180,10 +232,10 @@ export default function OrganizadorDashboard() {
     setSelectedSeat(null);
     setGuestName('');
     setGuestEmail('');
-    
+
     try {
-      const seats = await EventService.getCortesiaSeats(eventId);
-      setSeats(seats);
+      const cortesiaSeats = await EventService.getCortesiaSeats(eventId);
+      setSeats(cortesiaSeats);
     } catch (e) {
       console.error(e);
     } finally {
@@ -194,14 +246,15 @@ export default function OrganizadorDashboard() {
   const handleIssueCortesia = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedSeat || !selectedEventId) {
-      alert('Selecione um assento'); return;
+      showToast('Selecione um assento primeiro', 'error');
+      return;
     }
     try {
       await EventService.issueCortesia(selectedEventId, selectedSeat.id, guestName, guestEmail);
-      alert('Cortesia emitida com sucesso!');
+      showToast('Cortesia emitida com sucesso!', 'success');
       setIsCortesiaModalOpen(false);
     } catch (err: any) {
-      alert(err.message);
+      showToast(err.message || 'Erro ao emitir cortesia', 'error');
     }
   };
 
@@ -214,37 +267,38 @@ export default function OrganizadorDashboard() {
       const res = await fetch(`${apiUrl}/users/porteiros`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify(portariaData)
+        body: JSON.stringify(portariaData),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Erro ao criar conta');
-      
-      alert('Conta de portaria criada com sucesso!');
+
+      showToast('Conta de portaria criada com sucesso!', 'success');
       setPortariaData({ name: '', email: '', password: 'eliteportaria' });
-      fetchPorteiros(); // Atualiza a lista na hora
+      fetchPorteiros();
     } catch (err: any) {
-      alert(err.message);
+      showToast(err.message || 'Erro ao criar conta', 'error');
     }
     setCreatingPortaria(false);
   };
 
   const handleDeletePorteiro = async (id: string) => {
-    if (!confirm('Tem certeza que deseja excluir esta conta de portaria? O acesso dela será revogado imediatamente.')) return;
+    if (!confirm('Tem certeza que deseja revogar o acesso desta conta de portaria?')) return;
     try {
       const token = localStorage.getItem('token');
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3333/api';
       const res = await fetch(`${apiUrl}/users/porteiros/${id}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
-        setPorteiros(prev => prev.filter(p => p.id !== id));
+        setPorteiros((prev) => prev.filter((p) => p.id !== id));
+        showToast('Acesso de portaria revogado!', 'success');
       } else {
         const data = await res.json();
-        alert(data.error || 'Erro ao excluir');
+        showToast(data.error || 'Erro ao excluir', 'error');
       }
     } catch (e) {
-      alert('Erro de conexão');
+      showToast('Erro de conexão', 'error');
     }
   };
 
@@ -253,48 +307,51 @@ export default function OrganizadorDashboard() {
     setNewPorteiroPassword('');
     setPorteiroLogs([]);
     setLoadingLogs(true);
-    
+
     try {
       const token = localStorage.getItem('token');
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3333/api';
       const res = await fetch(`${apiUrl}/users/porteiros/${porteiro.id}/logs`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
         const data = await res.json();
         setPorteiroLogs(data);
       }
-    } catch(e) {}
+    } catch (e) {}
     setLoadingLogs(false);
   };
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newPorteiroPassword) return;
-    
+
     try {
       const token = localStorage.getItem('token');
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3333/api';
       const res = await fetch(`${apiUrl}/users/porteiros/${selectedPorteiroForSettings.id}/password`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ password: newPorteiroPassword })
+        body: JSON.stringify({ password: newPorteiroPassword }),
       });
       if (res.ok) {
-        alert('Senha redefinida com sucesso!');
+        showToast('Senha redefinida com sucesso!', 'success');
         setNewPorteiroPassword('');
       } else {
         const data = await res.json();
-        alert(data.error || 'Erro ao redefinir senha');
+        showToast(data.error || 'Erro ao redefinir senha', 'error');
       }
-    } catch(e) {
-      alert('Erro de conexão');
+    } catch (e) {
+      showToast('Erro de conexão', 'error');
     }
   };
 
   const getDaysInMonth = (year: number, month: number) => new Date(year, month + 1, 0).getDate();
   const getFirstDayOfMonth = (year: number, month: number) => new Date(year, month, 1).getDay();
-  const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+  const monthNames = [
+    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
+  ];
 
   const prevMonth = () => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1));
   const nextMonth = () => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1));
@@ -304,20 +361,24 @@ export default function OrganizadorDashboard() {
     const month = calendarMonth.getMonth();
     const daysInMonth = getDaysInMonth(year, month);
     const firstDay = getFirstDayOfMonth(year, month);
-    
+
     const days = [];
     for (let i = 0; i < firstDay; i++) {
       days.push(<div key={`empty-${i}`} style={{ padding: '0.75rem' }} />);
     }
-    
+
     for (let i = 1; i <= daysInMonth; i++) {
       const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
       const isSelected = dateFilter === dateStr;
-      
+
       days.push(
-        <button 
-          key={i} 
-          onClick={() => { setDateFilter(dateStr); setIsCalendarModalOpen(false); }}
+        <button
+          key={i}
+          type="button"
+          onClick={() => {
+            setDateFilter(dateStr);
+            setIsCalendarModalOpen(false);
+          }}
           style={{
             padding: '0.5rem',
             background: isSelected ? 'var(--accent-neon)' : 'rgba(255,255,255,0.05)',
@@ -330,288 +391,534 @@ export default function OrganizadorDashboard() {
             aspectRatio: '1/1',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center'
-          }}
-          onMouseOver={e => {
-            if (!isSelected) e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
-          }}
-          onMouseOut={e => {
-            if (!isSelected) e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+            justifyContent: 'center',
           }}
         >
           {i}
         </button>
       );
     }
-    
+
     return days;
   };
 
   const getDisplayCategory = (evt: Event) => {
     if (evt.category) return evt.category;
-    return evt.type === 'MOVIE' ? 'Filme' : 'Show';
+    return evt.type === 'MOVIE' ? 'Cinema' : 'Show';
   };
 
-  const filteredEvents = events.filter(evt => {
-    let matchesDate = true;
-    let matchesCategory = true;
-    
-    if (dateFilter) {
-      const evtDate = new Date(evt.date).toISOString().split('T')[0];
-      matchesDate = evtDate === dateFilter;
-    }
-    
-    if (categoryFilter) {
-      matchesCategory = getDisplayCategory(evt) === categoryFilter;
-    }
-    
-    return matchesDate && matchesCategory;
-  });
+  // KPIs Calculations
+  const totalActive = useMemo(() => events.filter((e) => e.status === 'PUBLISHED').length, [events]);
+  const totalPaused = useMemo(() => events.filter((e) => e.status !== 'PUBLISHED').length, [events]);
+  const totalCapacity = useMemo(() => events.reduce((acc, curr) => acc + (curr.capacity || curr.seats?.length || 50), 0), [events]);
 
-  const categories = Array.from(new Set(events.map(e => getDisplayCategory(e))));
+  const categories = useMemo(() => Array.from(new Set(events.map((e) => getDisplayCategory(e)))), [events]);
 
-  const groupedEvents = filteredEvents.reduce((acc, evt) => {
-    const cat = getDisplayCategory(evt);
-    if (!acc[cat]) acc[cat] = [];
-    acc[cat].push(evt);
-    return acc;
-  }, {} as Record<string, Event[]>);
+  const filteredEvents = useMemo(() => {
+    return events.filter((evt) => {
+      let matchesSearch = true;
+      let matchesDate = true;
+      let matchesCategory = true;
+
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase().trim();
+        matchesSearch = evt.title.toLowerCase().includes(q) || evt.location.toLowerCase().includes(q);
+      }
+
+      if (dateFilter) {
+        const evtDate = new Date(evt.date).toISOString().split('T')[0];
+        matchesDate = evtDate === dateFilter;
+      }
+
+      if (categoryFilter) {
+        matchesCategory = getDisplayCategory(evt) === categoryFilter;
+      }
+
+      return matchesSearch && matchesDate && matchesCategory;
+    });
+  }, [events, searchQuery, dateFilter, categoryFilter]);
 
   return (
-    <main className="container" style={{ padding: '4rem 1.5rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '3rem', flexWrap: 'wrap', gap: '1rem' }}>
-        <div>
-          <h1 className="neon-text" style={{ marginBottom: '0.5rem' }}>Painel de Eventos</h1>
-          <p className="text-secondary">Crie, pause e emita cortesias para os seus eventos.</p>
+    <main className="container" style={{ padding: '3rem 1.5rem 6rem 1.5rem', maxWidth: '1200px' }}>
+      
+      {/* TOAST NOTIFICATION */}
+      {toastMessage && (
+        <div 
+          style={{ 
+            position: 'fixed', 
+            top: '5.5rem', 
+            right: '2rem', 
+            zIndex: 1100, 
+            padding: '0.85rem 1.4rem', 
+            borderRadius: '12px', 
+            background: toastMessage.type === 'success' ? 'rgba(16, 185, 129, 0.95)' : 'rgba(239, 68, 68, 0.95)',
+            color: 'white',
+            fontWeight: 600,
+            fontSize: '0.9rem',
+            boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.6rem',
+            backdropFilter: 'blur(8px)'
+          }}
+        >
+          {toastMessage.text}
         </div>
-        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-          <select 
-            value={categoryFilter} 
-            onChange={e => setCategoryFilter(e.target.value)}
-            className="btn btn-secondary"
-            style={{ 
-              cursor: 'pointer',
-              appearance: 'none',
-              WebkitAppearance: 'none',
-              paddingRight: '2.5rem',
-              backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23f8fafc' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
-              backgroundRepeat: 'no-repeat',
-              backgroundPosition: 'right 1rem center',
-              backgroundSize: '1em'
-            }}
+      )}
+
+      {/* HEADER DO DASHBOARD */}
+      <div className={styles.header}>
+        <div className={styles.titleGroup}>
+          <h1 className={styles.title}>
+            Painel do <span className="text-gradient">Organizador</span>
+          </h1>
+          <p className={styles.subtitle}>
+            Gerencie seus eventos, emita cortesias VIP e configure a equipe de validação de portaria.
+          </p>
+        </div>
+
+        <div className={styles.headerActions}>
+          <button 
+            type="button" 
+            className="btn btn-secondary" 
+            onClick={openPortariaModal}
+            style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}
           >
-            <option value="" style={{ background: '#0f172a', color: 'white' }}>Todas as Categorias</option>
-            {categories.map(cat => (
-              <option key={cat} value={cat} style={{ background: '#0f172a', color: 'white' }}>{cat}</option>
+            <GearIcon size={16} />
+            Gerenciar Equipe
+          </button>
+
+          <button 
+            type="button" 
+            className="btn btn-secondary" 
+            onClick={() => router.push('/portaria')}
+          >
+            Acessar Portaria
+          </button>
+
+          <button 
+            type="button" 
+            className="btn btn-primary" 
+            onClick={() => setIsEventModalOpen(true)}
+            style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+          >
+            <span>+</span> Criar Evento
+          </button>
+        </div>
+      </div>
+
+      {/* CARDS DE KPIS EXECUTIVOS */}
+      <div className={styles.kpiGrid}>
+        <div className={styles.kpiCard}>
+          <div className={styles.kpiIcon}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+              <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+            </svg>
+          </div>
+          <div className={styles.kpiInfo}>
+            <span className={styles.kpiLabel}>Eventos Totais</span>
+            <span className={styles.kpiValue}>{events.length}</span>
+          </div>
+        </div>
+
+        <div className={styles.kpiCard}>
+          <div className={`${styles.kpiIcon} ${styles.kpiIconGreen}`}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
+            </svg>
+          </div>
+          <div className={styles.kpiInfo}>
+            <span className={styles.kpiLabel}>Em Cartaz / Ativos</span>
+            <span className={styles.kpiValue}>{totalActive}</span>
+          </div>
+        </div>
+
+        <div className={styles.kpiCard}>
+          <div className={styles.kpiIcon}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+            </svg>
+          </div>
+          <div className={styles.kpiInfo}>
+            <span className={styles.kpiLabel}>Capacidade Total</span>
+            <span className={styles.kpiValue}>{totalCapacity}</span>
+          </div>
+        </div>
+
+        <div className={styles.kpiCard}>
+          <div className={`${styles.kpiIcon} ${styles.kpiIconPurple}`}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
+          </div>
+          <div className={styles.kpiInfo}>
+            <span className={styles.kpiLabel}>Pausados / Rascunhos</span>
+            <span className={styles.kpiValue}>{totalPaused}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* BARRA DE CONTROLE & BUSCA */}
+      <div className={styles.controlBar}>
+        <div className={styles.filterGroup}>
+          <div className={styles.searchWrapper}>
+            <svg className={styles.searchIcon} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <input
+              type="text"
+              className={styles.searchInput}
+              placeholder="Buscar por título ou local..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+
+          <select
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+            className={styles.selectInput}
+          >
+            <option value="" style={{ background: '#0f172a' }}>Todas as Categorias</option>
+            {categories.map((cat) => (
+              <option key={cat} value={cat} style={{ background: '#0f172a' }}>
+                {cat}
+              </option>
             ))}
           </select>
+
           <div style={{ display: 'flex', alignItems: 'center' }}>
-            <button 
-              className="btn btn-secondary" 
+            <button
+              type="button"
+              className={`${styles.dateFilterBtn} ${dateFilter ? styles.dateFilterActive : ''}`}
               onClick={() => setIsCalendarModalOpen(true)}
-              style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: '0.5rem', 
-                background: dateFilter ? 'var(--accent-neon)' : undefined, 
-                color: dateFilter ? '#000' : undefined 
-              }}
             >
               <CalendarIcon />
               {dateFilter ? new Date(dateFilter + 'T12:00:00').toLocaleDateString('pt-BR') : 'Filtrar por Data'}
             </button>
             {dateFilter && (
-              <button 
+              <button
+                type="button"
                 onClick={() => setDateFilter('')}
-                style={{ background: 'transparent', border: 'none', color: 'var(--danger)', cursor: 'pointer', fontSize: '1.5rem', padding: '0 0.5rem', marginLeft: '0.2rem' }}
-                title="Limpar data"
+                className={styles.clearDateBtn}
+                title="Limpar filtro de data"
               >
                 &times;
               </button>
             )}
           </div>
-          <button className="btn btn-secondary" onClick={openPortariaModal}>
-            Gerenciar Equipe
-          </button>
-          <button className="btn btn-secondary" onClick={() => router.push('/portaria')}>
-            Ler QR Code
-          </button>
-          <button className="btn btn-primary" onClick={() => setIsEventModalOpen(true)}>
-            + Criar Evento
-          </button>
+        </div>
+
+        <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+          Exibindo <strong style={{ color: 'var(--text-primary)' }}>{filteredEvents.length}</strong> de {events.length} eventos
         </div>
       </div>
 
-      {loading ? <p>Carregando...</p> : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-          {Object.entries(groupedEvents).length === 0 ? (
-            <p className="text-secondary">Nenhum evento encontrado.</p>
-          ) : (
-            Object.entries(groupedEvents).map(([category, catEvents]) => (
-              <div key={category}>
-                <h2 style={{ marginBottom: '1rem', borderBottom: '1px solid var(--border-glass)', paddingBottom: '0.5rem', color: 'var(--text-primary)', fontSize: '1.25rem' }}>{category}</h2>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
-                  {catEvents.map(evt => {
-                    const isPaused = evt.status === 'PAUSED' || evt.status === 'DRAFT';
-                    return (
-                      <div key={evt.id} className="glass-panel" style={{ padding: '1.5rem', opacity: isPaused ? 0.6 : 1, position: 'relative' }}>
-                        {isPaused && (
-                          <span style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'var(--danger)', color: 'white', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 'bold' }}>
-                            PAUSADO
-                          </span>
-                        )}
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                          <h3 style={{ marginBottom: '0.5rem', paddingRight: '4rem' }}>{evt.title}</h3>
-                        </div>
-                        <span style={{ display: 'inline-block', padding: '0.2rem 0.5rem', background: 'rgba(255,255,255,0.1)', borderRadius: '4px', fontSize: '0.75rem', marginBottom: '1rem' }}>
-                          {getDisplayCategory(evt)}
-                        </span>
-                        
-                        <p className="text-secondary" style={{ fontSize: '0.875rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'center' }}>
-                          <MapPinIcon /> {evt.location}
-                        </p>
-                        <p className="text-secondary" style={{ fontSize: '0.875rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center' }}>
-                          <CalendarIcon /> {new Date(evt.date).toLocaleString('pt-BR')}
-                        </p>
-                        
-                        <div style={{ display: 'flex', gap: '0.5rem' }}>
-                          <button 
-                            className="btn btn-primary" 
-                            style={{ flex: 1, padding: '0.5rem', fontSize: '0.8rem' }}
-                            onClick={() => openCortesiaModal(evt.id)}
-                            disabled={isPaused}
-                          >
-                            Cortesias
-                          </button>
-                          <button 
-                            className="btn btn-secondary" 
-                            style={{ flex: 1, padding: '0.5rem', fontSize: '0.8rem' }}
-                            onClick={() => toggleEventStatus(evt.id, evt.status)}
-                          >
-                            {isPaused ? 'Publicar' : 'Pausar'}
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
+      {/* GRADE DE EVENTOS */}
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '4rem 1rem' }}>
+          <p className="text-secondary">Carregando seus eventos...</p>
+        </div>
+      ) : filteredEvents.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '5rem 1.5rem', background: 'var(--background-card)', border: '1px solid var(--border-glass)', borderRadius: '16px' }}>
+          <h3 style={{ fontFamily: 'var(--font-heading-family)', margin: '0 0 0.5rem 0' }}>Nenhum evento encontrado</h3>
+          <p className="text-secondary" style={{ maxWidth: '400px', margin: '0 auto 1.5rem auto', fontSize: '0.9rem' }}>
+            Não encontramos eventos correspondentes aos filtros aplicados. Tente redefinir a busca ou crie um novo evento.
+          </p>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={() => {
+              setSearchQuery('');
+              setDateFilter('');
+              setCategoryFilter('');
+            }}
+          >
+            Limpar Filtros
+          </button>
+        </div>
+      ) : (
+        <div className={styles.eventsGrid}>
+          {filteredEvents.map((evt) => {
+            const isPaused = evt.status === 'PAUSED' || evt.status === 'DRAFT';
+            return (
+              <div
+                key={evt.id}
+                className={`${styles.eventCard} ${isPaused ? styles.eventCardPaused : ''}`}
+              >
+                <div className={styles.eventCardTop}>
+                  <div className={styles.eventPosterWrapper}>
+                    <Image
+                      src={getImageUrl(evt.posterUrl || null)}
+                      alt={`Pôster de ${evt.title}`}
+                      fill
+                      className={styles.eventPoster}
+                      sizes="72px"
+                    />
+                  </div>
+
+                  <div className={styles.eventHeaderInfo}>
+                    <div className={styles.eventCategoryRow}>
+                      <span className={styles.categoryTag}>{getDisplayCategory(evt)}</span>
+                      <span className={isPaused ? styles.statusTagPaused : styles.statusTagActive}>
+                        {isPaused ? 'Pausado' : 'Ativo'}
+                      </span>
+                    </div>
+
+                    <h3 className={styles.eventTitle} title={evt.title}>
+                      {evt.title}
+                    </h3>
+
+                    <div className={styles.eventMeta}>
+                      <span className={styles.eventMetaItem}>
+                        <CalendarIcon /> {new Date(evt.date).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}
+                      </span>
+                      <span className={styles.eventMetaItem} title={evt.location}>
+                        <MapPinIcon /> {evt.location}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className={styles.eventCardFooter}>
+                  <button
+                    type="button"
+                    className={`${styles.actionBtn} ${styles.actionBtnPrimary}`}
+                    onClick={() => openCortesiaModal(evt.id)}
+                    disabled={isPaused}
+                  >
+                    Emitir Cortesia
+                  </button>
+
+                  <button
+                    type="button"
+                    className={`${styles.actionBtn} ${styles.actionBtnSecondary}`}
+                    onClick={() => toggleEventStatus(evt.id, evt.status)}
+                  >
+                    {isPaused ? 'Publicar' : 'Pausar'}
+                  </button>
                 </div>
               </div>
-            ))
-          )}
+            );
+          })}
         </div>
       )}
 
-      {/* Modal Criar Evento */}
+      {/* MODAL: CRIAR NOVO EVENTO */}
       {isEventModalOpen && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999 }}>
-          <div className="glass-panel" style={{ padding: '2rem', width: '100%', maxWidth: '600px', maxHeight: '90vh', overflowY: 'auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h3 className="neon-text">Criar Novo Evento</h3>
-              <button onClick={() => setIsEventModalOpen(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '1.2rem' }}>&times;</button>
+        <div className={styles.modalBackdrop} onClick={() => setIsEventModalOpen(false)}>
+          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h3 className={styles.modalTitle}>Criar Novo Evento</h3>
+              <button type="button" className={styles.closeBtn} onClick={() => setIsEventModalOpen(false)}>
+                &times;
+              </button>
             </div>
-            
-            <form onSubmit={handleCreateEvent} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+
+            <form onSubmit={handleCreateEvent} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '0.5rem' }}>Título do Evento</label>
-                <input required type="text" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-glass)', color: 'white' }} />
+                <label style={{ display: 'block', fontSize: '0.825rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>
+                  Título do Evento
+                </label>
+                <input
+                  required
+                  type="text"
+                  placeholder="Ex: Festival de Verão 2026"
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '12px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-glass)', color: 'white' }}
+                />
               </div>
-              <div style={{ display: 'flex', gap: '1rem' }}>
-                <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '0.5rem' }}>Categoria</label>
-                  <select 
-                    required 
-                    value={formData.category} 
-                    onChange={e => setFormData({...formData, category: e.target.value})} 
-                    style={{ 
-                      width: '100%', 
-                      padding: '0.75rem', 
-                      paddingRight: '2.5rem',
-                      borderRadius: '8px', 
-                      backgroundColor: 'rgba(0,0,0,0.3)', 
-                      border: '1px solid var(--border-glass)', 
-                      color: 'white',
-                      appearance: 'none',
-                      WebkitAppearance: 'none',
-                      backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23f8fafc' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
-                      backgroundRepeat: 'no-repeat',
-                      backgroundPosition: 'right 0.75rem center',
-                      backgroundSize: '1em'
-                    }}
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.825rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>
+                    Categoria
+                  </label>
+                  <select
+                    required
+                    value={formData.category}
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                    style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '12px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-glass)', color: 'white' }}
                   >
-                    <option value="Show">Show</option>
-                    <option value="Teatro">Teatro</option>
-                    <option value="Cinema">Cinema</option>
-                    <option value="E-sports">E-sports</option>
-                    <option value="Outros">Outros</option>
+                    <option value="Show" style={{ background: '#0f172a' }}>Show</option>
+                    <option value="Teatro" style={{ background: '#0f172a' }}>Teatro</option>
+                    <option value="Cinema" style={{ background: '#0f172a' }}>Cinema</option>
+                    <option value="E-sports" style={{ background: '#0f172a' }}>E-sports</option>
+                    <option value="Outros" style={{ background: '#0f172a' }}>Outros</option>
                   </select>
                 </div>
-                <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '0.5rem' }}>Data e Hora</label>
-                  <input required type="datetime-local" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-glass)', color: 'white' }} />
-                </div>
-              </div>
-              <div style={{ display: 'flex', gap: '1rem' }}>
-                <div style={{ width: '150px' }}>
-                  <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '0.5rem' }}>
-                    CEP {loadingCep && <span style={{ color: 'var(--accent-neon)', fontSize: '0.7rem' }}>(Buscando...)</span>}
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.825rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>
+                    Data e Horário
                   </label>
-                  <input type="text" placeholder="00000-000" maxLength={9} value={formData.cep} onChange={handleCepChange} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-glass)', color: 'white' }} />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '0.5rem' }}>Local Completo</label>
-                  <input required type="text" placeholder="Logradouro, número, bairro..." value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-glass)', color: 'white' }} />
-                </div>
-              </div>
-              <div style={{ display: 'flex', gap: '1rem' }}>
-                <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '0.5rem' }}>Capacidade (Lotação)</label>
-                  <input required type="text" value={formData.capacity === 0 ? '' : maskInteger(formData.capacity)} onChange={e => setFormData({...formData, capacity: Number(maskInteger(e.target.value))})} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-glass)', color: 'white' }} />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '0.5rem' }}>Preço Base (R$)</label>
-                  <input required type="text" value={maskCurrency(formData.price)} onChange={e => setFormData({...formData, price: getCurrencyNumber(e.target.value)})} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-glass)', color: 'white' }} />
+                  <input
+                    required
+                    type="datetime-local"
+                    value={formData.date}
+                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                    style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '12px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-glass)', color: 'white' }}
+                  />
                 </div>
               </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr', gap: '1rem' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.825rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>
+                    CEP {loadingCep && <span style={{ color: 'var(--accent-neon)' }}>(Buscando...)</span>}
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="00000-000"
+                    maxLength={9}
+                    value={formData.cep}
+                    onChange={handleCepChange}
+                    style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '12px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-glass)', color: 'white' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.825rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>
+                    Endereço Completo
+                  </label>
+                  <input
+                    required
+                    type="text"
+                    placeholder="Logradouro, número, bairro, cidade..."
+                    value={formData.location}
+                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                    style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '12px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-glass)', color: 'white' }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.825rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>
+                    Lotação Máxima
+                  </label>
+                  <input
+                    required
+                    type="text"
+                    value={formData.capacity === 0 ? '' : maskInteger(formData.capacity)}
+                    onChange={(e) => setFormData({ ...formData, capacity: Number(maskInteger(e.target.value)) })}
+                    style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '12px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-glass)', color: 'white' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.825rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>
+                    Preço Base (R$)
+                  </label>
+                  <input
+                    required
+                    type="text"
+                    value={maskCurrency(formData.price)}
+                    onChange={(e) => setFormData({ ...formData, price: getCurrencyNumber(e.target.value) })}
+                    style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '12px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-glass)', color: 'white' }}
+                  />
+                </div>
+              </div>
+
               <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '0.5rem' }}>Descrição</label>
-                <textarea rows={3} value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-glass)', color: 'white', resize: 'vertical' }} />
+                <label style={{ display: 'block', fontSize: '0.825rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>
+                  Descrição do Evento
+                </label>
+                <textarea
+                  rows={3}
+                  placeholder="Informações adicionais, classificação indicativa e atrações..."
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '12px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-glass)', color: 'white', resize: 'vertical' }}
+                />
               </div>
+
               <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '0.5rem' }}>Pôster (Imagem)</label>
-                <input type="file" accept="image/*" onChange={handleImageUpload} style={{ width: '100%', color: 'var(--text-secondary)' }} />
+                <label style={{ display: 'block', fontSize: '0.825rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>
+                  Pôster / Imagem de Divulgação
+                </label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  style={{ width: '100%', color: 'var(--text-secondary)' }}
+                />
               </div>
-              <button type="submit" className="btn btn-primary" disabled={creating} style={{ marginTop: '1rem' }}>
-                {creating ? 'Criando...' : 'Publicar Evento'}
+
+              <button
+                type="submit"
+                className="btn btn-primary"
+                disabled={creating}
+                style={{ marginTop: '0.5rem', padding: '0.85rem' }}
+              >
+                {creating ? 'Publicando Evento...' : 'Publicar Evento'}
               </button>
             </form>
           </div>
         </div>
       )}
 
-      {/* Modal Emitir Cortesia */}
+      {/* MODAL: EMITIR CORTESIA VIP */}
       {isCortesiaModalOpen && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999 }}>
-          <div className="glass-panel" style={{ padding: '2rem', width: '100%', maxWidth: '500px', maxHeight: '90vh', overflowY: 'auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h3 className="neon-text">Emitir Cortesia</h3>
-              <button onClick={() => setIsCortesiaModalOpen(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '1.2rem' }}>&times;</button>
+        <div className={styles.modalBackdrop} onClick={() => setIsCortesiaModalOpen(false)}>
+          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h3 className={styles.modalTitle}>Emitir Cortesia VIP</h3>
+              <button type="button" className={styles.closeBtn} onClick={() => setIsCortesiaModalOpen(false)}>
+                &times;
+              </button>
             </div>
-            
-            {loadingSeats ? <p>Carregando assentos...</p> : (
-              <form onSubmit={handleIssueCortesia} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+
+            {loadingSeats ? (
+              <p className="text-secondary" style={{ textAlign: 'center', padding: '2rem 0' }}>
+                Carregando mapa de assentos...
+              </p>
+            ) : (
+              <form onSubmit={handleIssueCortesia} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '0.5rem' }}>Selecione um Assento Livre</label>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(40px, 1fr))', gap: '0.5rem', maxHeight: '150px', overflowY: 'auto', padding: '0.5rem', background: 'rgba(0,0,0,0.2)', borderRadius: '8px' }}>
-                    {seats.map(seat => (
-                      <button 
-                        key={seat.id} type="button"
+                  <label style={{ display: 'block', fontSize: '0.825rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
+                    Selecione um Assento Disponível
+                  </label>
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fill, minmax(44px, 1fr))',
+                      gap: '0.5rem',
+                      maxHeight: '160px',
+                      overflowY: 'auto',
+                      padding: '0.75rem',
+                      background: 'rgba(0,0,0,0.3)',
+                      borderRadius: '12px',
+                      border: '1px solid var(--border-glass)',
+                    }}
+                  >
+                    {seats.map((seat) => (
+                      <button
+                        key={seat.id}
+                        type="button"
                         onClick={() => setSelectedSeat(seat)}
                         disabled={seat.status !== 'AVAILABLE'}
                         style={{
-                          padding: '0.5rem', borderRadius: '4px', border: 'none',
-                          background: selectedSeat?.id === seat.id ? 'var(--accent-neon)' : (seat.status === 'AVAILABLE' ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.02)'),
-                          color: selectedSeat?.id === seat.id ? 'black' : (seat.status === 'AVAILABLE' ? 'white' : 'transparent'),
-                          cursor: seat.status === 'AVAILABLE' ? 'pointer' : 'not-allowed'
+                          padding: '0.5rem',
+                          borderRadius: '6px',
+                          border: 'none',
+                          background: selectedSeat?.id === seat.id
+                            ? 'var(--accent-neon)'
+                            : (seat.status === 'AVAILABLE' ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.02)'),
+                          color: selectedSeat?.id === seat.id
+                            ? 'white'
+                            : (seat.status === 'AVAILABLE' ? 'white' : 'transparent'),
+                          fontWeight: 700,
+                          fontSize: '0.75rem',
+                          cursor: seat.status === 'AVAILABLE' ? 'pointer' : 'not-allowed',
+                          transition: 'all 0.15s',
                         }}
                         title={`Fila ${seat.row} - Assento ${seat.number}`}
                       >
@@ -620,17 +927,40 @@ export default function OrganizadorDashboard() {
                     ))}
                   </div>
                 </div>
+
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '0.5rem' }}>Nome do Convidado (Opcional)</label>
-                  <input type="text" value={guestName} onChange={e => setGuestName(e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-glass)', color: 'white' }} />
+                  <label style={{ display: 'block', fontSize: '0.825rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>
+                    Nome do Convidado (Opcional)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Nome do VIP / Imprensa"
+                    value={guestName}
+                    onChange={(e) => setGuestName(e.target.value)}
+                    style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '12px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-glass)', color: 'white' }}
+                  />
                 </div>
+
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '0.5rem' }}>E-mail do Convidado (Opcional)</label>
-                  <input type="email" value={guestEmail} onChange={e => setGuestEmail(e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-glass)', color: 'white' }} />
+                  <label style={{ display: 'block', fontSize: '0.825rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>
+                    E-mail do Convidado (Opcional)
+                  </label>
+                  <input
+                    type="email"
+                    placeholder="convidado@vip.com"
+                    value={guestEmail}
+                    onChange={(e) => setGuestEmail(e.target.value)}
+                    style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '12px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-glass)', color: 'white' }}
+                  />
                 </div>
-                
-                <button type="submit" className="btn btn-primary" disabled={!selectedSeat} style={{ marginTop: '1rem' }}>
-                  Gerar Ingresso VIP
+
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={!selectedSeat}
+                  style={{ marginTop: '0.5rem', padding: '0.85rem' }}
+                >
+                  {selectedSeat ? `Emitir Cortesia (Assento ${selectedSeat.row}${selectedSeat.number})` : 'Selecione um assento'}
                 </button>
               </form>
             )}
@@ -638,31 +968,58 @@ export default function OrganizadorDashboard() {
         </div>
       )}
 
-      {/* Modal Gerenciar Portaria */}
+      {/* MODAL: GERENCIAR EQUIPE DE PORTARIA */}
       {isPortariaModalOpen && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999 }}>
-          <div className="glass-panel" style={{ padding: '2rem', width: '100%', maxWidth: '500px', maxHeight: '90vh', overflowY: 'auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h3 className="neon-text">Gerenciar Equipe (Portaria)</h3>
-              <button onClick={() => setIsPortariaModalOpen(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '1.2rem' }}>&times;</button>
+        <div className={styles.modalBackdrop} onClick={() => setIsPortariaModalOpen(false)}>
+          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h3 className={styles.modalTitle}>Equipe de Portaria</h3>
+              <button type="button" className={styles.closeBtn} onClick={() => setIsPortariaModalOpen(false)}>
+                &times;
+              </button>
             </div>
-            
+
             <div style={{ marginBottom: '2rem' }}>
-              <h4 style={{ marginBottom: '1rem', borderBottom: '1px solid var(--border-glass)', paddingBottom: '0.5rem' }}>Contas Ativas</h4>
-              {loadingPorteiros ? <p>Carregando...</p> : porteiros.length === 0 ? <p className="text-secondary" style={{ fontSize: '0.8rem' }}>Nenhuma conta criada ainda.</p> : (
-                <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  {porteiros.map(p => (
-                    <li key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.3)', padding: '0.75rem', borderRadius: '8px' }}>
+              <h4 style={{ margin: '0 0 1rem 0', fontSize: '0.95rem', color: 'var(--text-primary)' }}>Contas de Acesso Ativas</h4>
+              {loadingPorteiros ? (
+                <p className="text-secondary" style={{ fontSize: '0.85rem' }}>Carregando equipe...</p>
+              ) : porteiros.length === 0 ? (
+                <p className="text-secondary" style={{ fontSize: '0.85rem' }}>Nenhum membro cadastrado ainda.</p>
+              ) : (
+                <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                  {porteiros.map((p) => (
+                    <li
+                      key={p.id}
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        background: 'rgba(0,0,0,0.3)',
+                        padding: '0.75rem 1rem',
+                        borderRadius: '12px',
+                        border: '1px solid var(--border-glass)',
+                      }}
+                    >
                       <div>
-                        <span style={{ display: 'block', fontWeight: 'bold' }}>{p.name}</span>
+                        <span style={{ display: 'block', fontWeight: 'bold', fontSize: '0.9rem' }}>{p.name}</span>
                         <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{p.email}</span>
                       </div>
                       <div style={{ display: 'flex', gap: '0.5rem' }}>
-                        <button onClick={() => openPorteiroSettings(p)} style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', padding: '0.2rem' }} title="Configurações">
-                          <GearIcon size={20} />
+                        <button
+                          type="button"
+                          onClick={() => openPorteiroSettings(p)}
+                          style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border-glass)', color: 'var(--text-primary)', cursor: 'pointer', padding: '0.4rem', borderRadius: '8px', display: 'flex' }}
+                          title="Configurações e Logs"
+                        >
+                          <GearIcon size={16} />
                         </button>
-                        <button onClick={() => handleDeletePorteiro(p.id)} style={{ background: 'transparent', border: 'none', color: 'var(--danger)', cursor: 'pointer', padding: '0.2rem' }} title="Revogar acesso">
-                          <TrashIcon size={20} />
+                        <button
+                          type="button"
+                          onClick={() => handleDeletePorteiro(p.id)}
+                          style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#ef4444', cursor: 'pointer', padding: '0.4rem', borderRadius: '8px', display: 'flex' }}
+                          title="Revogar Acesso"
+                        >
+                          <TrashIcon size={16} />
                         </button>
                       </div>
                     </li>
@@ -671,57 +1028,103 @@ export default function OrganizadorDashboard() {
               )}
             </div>
 
-            <h4 style={{ marginBottom: '1rem', borderBottom: '1px solid var(--border-glass)', paddingBottom: '0.5rem' }}>Cadastrar Novo Membro</h4>
-            <form onSubmit={handleCreatePortaria} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '0.5rem' }}>Nome (Ex: &quot;Equipe Setor A&quot;)</label>
-                <input required type="text" value={portariaData.name} onChange={e => setPortariaData({...portariaData, name: e.target.value})} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-glass)', color: 'white' }} />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '0.5rem' }}>E-mail de Login</label>
-                <input required type="email" value={portariaData.email} onChange={e => setPortariaData({...portariaData, email: e.target.value})} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-glass)', color: 'white' }} />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '0.5rem' }}>Senha de Acesso</label>
-                <input required type="text" value={portariaData.password} onChange={e => setPortariaData({...portariaData, password: e.target.value})} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-glass)', color: 'white' }} />
-              </div>
-              <button type="submit" className="btn btn-primary" disabled={creatingPortaria} style={{ marginTop: '1rem' }}>
-                {creatingPortaria ? 'Criando...' : 'Cadastrar e Liberar Acesso'}
-              </button>
-            </form>
+            <div style={{ borderTop: '1px solid var(--border-glass)', paddingTop: '1.25rem' }}>
+              <h4 style={{ margin: '0 0 1rem 0', fontSize: '0.95rem', color: 'var(--text-primary)' }}>Novo Membro de Portaria</h4>
+              <form onSubmit={handleCreatePortaria} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.35rem' }}>Nome da Equipe</label>
+                  <input
+                    required
+                    type="text"
+                    placeholder="Ex: Portaria Principal Setor A"
+                    value={portariaData.name}
+                    onChange={(e) => setPortariaData({ ...portariaData, name: e.target.value })}
+                    style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-glass)', color: 'white' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.35rem' }}>E-mail de Login</label>
+                  <input
+                    required
+                    type="email"
+                    placeholder="portaria1@evento.com"
+                    value={portariaData.email}
+                    onChange={(e) => setPortariaData({ ...portariaData, email: e.target.value })}
+                    style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-glass)', color: 'white' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.35rem' }}>Senha Inicial</label>
+                  <input
+                    required
+                    type="text"
+                    value={portariaData.password}
+                    onChange={(e) => setPortariaData({ ...portariaData, password: e.target.value })}
+                    style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-glass)', color: 'white' }}
+                  />
+                </div>
+                <button type="submit" className="btn btn-primary" disabled={creatingPortaria} style={{ padding: '0.75rem' }}>
+                  {creatingPortaria ? 'Cadastrando...' : 'Cadastrar Membro'}
+                </button>
+              </form>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Modal Configurações do Porteiro */}
+      {/* MODAL: CONFIGURAÇÕES E LOGS DO PORTEIRO */}
       {selectedPorteiroForSettings && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div className="glass-panel" style={{ padding: '2rem', width: '100%', maxWidth: '500px', maxHeight: '90vh', overflowY: 'auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h3 className="neon-text">Gerenciar: {selectedPorteiroForSettings.name}</h3>
-              <button onClick={() => setSelectedPorteiroForSettings(null)} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '1.2rem' }}>&times;</button>
+        <div className={styles.modalBackdrop} onClick={() => setSelectedPorteiroForSettings(null)}>
+          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h3 className={styles.modalTitle}>{selectedPorteiroForSettings.name}</h3>
+              <button type="button" className={styles.closeBtn} onClick={() => setSelectedPorteiroForSettings(null)}>
+                &times;
+              </button>
             </div>
 
             <div style={{ marginBottom: '2rem' }}>
-              <h4 style={{ marginBottom: '1rem', borderBottom: '1px solid var(--border-glass)', paddingBottom: '0.5rem' }}>Redefinir Senha</h4>
+              <h4 style={{ margin: '0 0 0.75rem 0', fontSize: '0.95rem' }}>Redefinir Senha de Acesso</h4>
               <form onSubmit={handleResetPassword} style={{ display: 'flex', gap: '0.5rem' }}>
-                <input required type="text" placeholder="Nova senha" value={newPorteiroPassword} onChange={e => setNewPorteiroPassword(e.target.value)} style={{ flex: 1, padding: '0.75rem', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-glass)', color: 'white' }} />
-                <button type="submit" className="btn btn-primary">Salvar</button>
+                <input
+                  required
+                  type="text"
+                  placeholder="Nova senha"
+                  value={newPorteiroPassword}
+                  onChange={(e) => setNewPorteiroPassword(e.target.value)}
+                  style={{ flex: 1, padding: '0.65rem 0.85rem', borderRadius: '10px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-glass)', color: 'white' }}
+                />
+                <button type="submit" className="btn btn-primary" style={{ padding: '0.65rem 1.25rem' }}>
+                  Salvar
+                </button>
               </form>
             </div>
 
             <div>
-              <h4 style={{ marginBottom: '1rem', borderBottom: '1px solid var(--border-glass)', paddingBottom: '0.5rem' }}>Últimas Validações</h4>
-              {loadingLogs ? <p>Carregando histórico...</p> : porteiroLogs.length === 0 ? <p className="text-secondary" style={{ fontSize: '0.8rem' }}>Nenhum ingresso bipado ainda.</p> : (
+              <h4 style={{ margin: '0 0 0.75rem 0', fontSize: '0.95rem' }}>Últimas Validações de QR Code</h4>
+              {loadingLogs ? (
+                <p className="text-secondary" style={{ fontSize: '0.85rem' }}>Carregando histórico...</p>
+              ) : porteiroLogs.length === 0 ? (
+                <p className="text-secondary" style={{ fontSize: '0.85rem' }}>Nenhum ingresso validado recentemente.</p>
+              ) : (
                 <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '200px', overflowY: 'auto' }}>
                   {porteiroLogs.map((log: any) => (
-                    <li key={log.id} style={{ background: 'rgba(0,0,0,0.3)', padding: '0.75rem', borderRadius: '8px', fontSize: '0.8rem' }}>
+                    <li
+                      key={log.id}
+                      style={{
+                        background: 'rgba(0,0,0,0.3)',
+                        padding: '0.75rem',
+                        borderRadius: '10px',
+                        fontSize: '0.8rem',
+                        border: '1px solid var(--border-glass)',
+                      }}
+                    >
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
                         <span style={{ fontWeight: 'bold' }}>{log.event?.title}</span>
                         <span style={{ color: 'var(--accent-neon)' }}>{new Date(log.scannedAt).toLocaleTimeString('pt-BR')}</span>
                       </div>
                       <div style={{ color: 'var(--text-secondary)' }}>
-                        Fila {log.seat?.row} - Num {log.seat?.number}
+                        Fila {log.seat?.row} - Assento {log.seat?.number}
                       </div>
                     </li>
                   ))}
@@ -732,36 +1135,48 @@ export default function OrganizadorDashboard() {
         </div>
       )}
 
-      {/* Modal Calendário */}
+      {/* MODAL: CALENDÁRIO DE FILTRO */}
       {isCalendarModalOpen && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div className="glass-panel" style={{ padding: '2rem', width: '100%', maxWidth: '400px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h3 className="neon-text">Filtrar por Data</h3>
-              <button onClick={() => setIsCalendarModalOpen(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '1.2rem' }}>&times;</button>
+        <div className={styles.modalBackdrop} onClick={() => setIsCalendarModalOpen(false)}>
+          <div className={styles.modalContent} style={{ maxWidth: '400px' }} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h3 className={styles.modalTitle}>Filtrar por Data</h3>
+              <button type="button" className={styles.closeBtn} onClick={() => setIsCalendarModalOpen(false)}>
+                &times;
+              </button>
             </div>
-            
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <button onClick={prevMonth} className="btn btn-secondary" style={{ padding: '0.5rem 1rem' }}>&lt;</button>
-              <h4 style={{ margin: 0 }}>{monthNames[calendarMonth.getMonth()]} {calendarMonth.getFullYear()}</h4>
-              <button onClick={nextMonth} className="btn btn-secondary" style={{ padding: '0.5rem 1rem' }}>&gt;</button>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+              <button type="button" onClick={prevMonth} className="btn btn-secondary" style={{ padding: '0.4rem 0.8rem' }}>
+                &lt;
+              </button>
+              <h4 style={{ margin: 0, fontFamily: 'var(--font-heading-family)' }}>
+                {monthNames[calendarMonth.getMonth()]} {calendarMonth.getFullYear()}
+              </h4>
+              <button type="button" onClick={nextMonth} className="btn btn-secondary" style={{ padding: '0.4rem 0.8rem' }}>
+                &gt;
+              </button>
             </div>
-            
+
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '0.5rem', textAlign: 'center', marginBottom: '0.5rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
               <div>Dom</div><div>Seg</div><div>Ter</div><div>Qua</div><div>Qui</div><div>Sex</div><div>Sáb</div>
             </div>
-            
+
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '0.5rem' }}>
               {renderCalendar()}
             </div>
-            
+
             <div style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'center' }}>
-              <button 
-                className="btn btn-secondary" 
-                onClick={() => { setDateFilter(''); setIsCalendarModalOpen(false); }}
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => {
+                  setDateFilter('');
+                  setIsCalendarModalOpen(false);
+                }}
                 style={{ width: '100%' }}
               >
-                Limpar Filtro
+                Limpar Filtro de Data
               </button>
             </div>
           </div>
