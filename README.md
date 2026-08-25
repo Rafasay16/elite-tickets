@@ -1,142 +1,159 @@
 # Elite Tickets
 
-A full-stack event ticketing application featuring real-time QR Code validation, seat reservation, and a dynamic, interactive user interface.
+A full-stack event ticketing and digital access management platform featuring real-time QR Code validation, interactive seat reservations, administrative business intelligence, and a modern glassmorphism interface.
 
 ## Live Demonstrations
-- **Frontend Platform:** [https://elite-tickets-vlr.vercel.app/](https://elite-tickets-vlr.vercel.app/)
-- **Backend API Services:** [https://elite-tickets-api-uiqi.onrender.com](https://elite-tickets-api-uiqi.onrender.com)
+- Frontend Platform: [https://elite-tickets-vlr.vercel.app/](https://elite-tickets-vlr.vercel.app/)
+- Backend API Services: [https://elite-tickets-api-uiqi.onrender.com](https://elite-tickets-api-uiqi.onrender.com)
+
+## Engineering and Development Process
+
+This platform was architected and developed utilizing advanced artificial intelligence engineering workflows and frontend critique tools:
+
+- **AI Engineering Models:** Developed and refined using Claude Code (Opus) and Gemini 3.7 Flash (High Thinking / Reasoning) for full-stack architecture, transactional reservation algorithms, RBAC security rules, and performance optimizations.
+- **Frontend Auditing and UX Polish (Impeccable):** Frontend interfaces and user journeys across the catalog, checkout, client wallet, organizer panel, portaria scanner, and super-admin dashboards were systematically reviewed, audited, and polished using the Impeccable design and heuristic critique suite.
 
 ## Technology Stack
-- **Frontend:** Next.js 14, Tailwind CSS, Lucide React
-- **Backend:** Node.js, Express, Prisma ORM
-- **Database:** PostgreSQL (Hosted on Supabase)
-- **Infrastructure:** Vercel (Frontend Hosting) & Render (Backend Hosting)
+
+- **Frontend Subsystem:**
+  - Framework: Next.js 14 (App Router)
+  - Language: TypeScript
+  - Styling: Vanilla CSS Modules with a custom tokenized Glassmorphism design system
+  - Icons: Custom Vector SVG Icons
+  - Image Optimization: Next.js Image Component with remote pattern integration (TMDB, DiceBear)
+  - Audio Feedback: HTML5 Web Audio API Synthesizer (oscillator-based portaria scanning sounds)
+
+- **Backend Subsystem:**
+  - Runtime: Node.js
+  - Framework: Express
+  - Language: TypeScript
+  - ORM: Prisma
+  - Database: PostgreSQL (Supabase)
+  - Authentication: JWT (JSON Web Tokens) with Argon2/Bcrypt password hashing and HTTP-only cookies
+
+- **Infrastructure and Hosting:**
+  - Frontend: Vercel
+  - Backend: Render
+  - Database: Supabase
 
 ## Architecture Overview
 
-Elite Tickets is a comprehensive ticketing platform designed for cinemas, concerts, and regional festivals. It provides an end-to-end solution for event management, ticket purchasing, and access control.
+Elite Tickets provides an end-to-end ticketing ecosystem designed for regional festivals, concerts, theaters, and cinemas in Brazil. The system operates as a monorepo with decoupled frontend and backend services to ensure separation of concerns, high throughput, and seamless maintainability.
 
-The system is structured as a monorepo containing decoupled frontend and backend services, ensuring high scalability, maintainability, and clear separation of concerns.
+### Key Capabilities
 
-### Frontend Subsystem
-- **Framework:** Next.js 14 (App Router)
-- **Language:** TypeScript
-- **Design System:** Custom CSS Modules featuring modern dark-mode and glassmorphism aesthetics.
-- **Core Capabilities:**
-  - Interactive and dynamic seat mapping and sector selection algorithms.
-  - Geolocation-based event filtering and multi-session scheduling logic.
-  - Role-based routing supporting specialized administrative dashboards.
-  - Client-side dynamic QR Code rendering for ticket validation workflows.
+1. **Interactive Event Discovery and Faceted Search:**
+   - Real-time instant query search across event titles and venues.
+   - Category facet filters (Shows, Cinema, Teatro, E-sports, Outros).
+   - Date range filters (Hoje, Fim de Semana, Este Mês, Seletor de Calendário).
+   - Starting price indicators and high-impact hero carousel with pause-on-hover controls.
 
-### Backend Subsystem
-- **Framework:** Node.js powered by Express
-- **Language:** TypeScript
-- **Object-Relational Mapping:** Prisma
-- **Database Engine:** PostgreSQL (Supabase integration)
-- **Core Capabilities:**
-  - Secure RESTful API architecture.
-  - JSON Web Token (JWT) based authentication and authorization protocols.
-  - ACID-compliant transactional seat reservation logic.
-  - Comprehensive relational data modeling encompassing users, events, locations, seats, and reservations.
+2. **Visual Seat Selection and ACID Reservations:**
+   - Dynamic SVG-based interactive seat grids with row and column mapping.
+   - Real-time seat status tracking (Available, Reserved, Occupied, VIP Courtesy).
+   - Atomic checkout reservation prevents double-booking race conditions.
 
-## Access Control and Roles
+3. **Digital Ticket Wallet (Meus Ingressos):**
+   - Authentic boarding pass stub aesthetics with perforation details.
+   - Instant high-contrast QR code display directly in ticket cards for fast entrance validation.
+   - One-click QR code zoom modal for high-glare lighting environments.
+   - Timing badges with automated countdowns (Hoje, Amanhã, Em X dias, Encerrado).
+   - Tabbed view separating active upcoming tickets from archived past event passes.
+   - Native WhatsApp and clipboard link sharing via Web Share API.
 
-The platform implements a strict Role-Based Access Control (RBAC) architecture:
+4. **Dedicated Gatekeeper Scanner (Portaria HUD):**
+   - High-performance camera-based QR code scanning with auto-dismiss verification overlays.
+   - Web Audio API dual-tone audio feedback (positive harmonic chime for valid tickets, dissonant error buzz for duplicates or expired passes).
+   - Manual ticket ID input fallback for damaged camera lenses or scratched screens.
+   - Real-time recent scans audit feed.
 
-1. **Client (CLIENT):** Permitted to browse location-filtered events, select specific time sessions, interact with seat maps, simulate payment processing, and view acquired ticket portfolios.
-2. **Organizer (ORGANIZER):** Granted access to the Administrative Dashboard for creating events, defining seat capacities, and monitoring real-time financial metrics.
-3. **Super Administrator (SUPER_ADMIN):** Provided with global visibility over all platform analytics, total revenue streams, and comprehensive system administration rights.
-4. **Gatekeeper (PORTARIA):** Authorized to access the entry control interface to scan QR codes or manually validate ticket identifiers in real-time, effectively mitigating duplicate entries and fraud.
+5. **Organizer Administration Dashboard (admin@admin.com):**
+   - Executive KPI summary cards (Total Events, Active Events, Total Capacity, Paused Events).
+   - ViaCEP integration for automatic street, neighborhood, and city population from postal codes.
+   - VIP courtesy ticket issuance with direct seat allocation.
+   - Gatekeeper team management with access revocation, credential resets, and scan logs.
 
-## System Setup and Initialization
+6. **Super Administrator Governance Panel (superadmin@elite.com):**
+   - Platform-wide governance KPI cards (Total Organizers, Active Partners, Average Platform Fee, Suspended Accounts).
+   - Commercial parameterization (custom service fee percentage and event publishing quota per producer).
+   - Automated temporary password generation with one-click clipboard copy.
 
-### Requirements
-- Node.js Runtime (v18 or higher required)
-- Package Manager (npm or yarn)
+## Access Control and RBAC Roles
 
-### Installation Procedures
+The system enforces strict Role-Based Access Control:
 
-Clone the repository and install all required dependencies across the root, frontend, and backend packages:
+- **CLIENT:** Browses catalog, selects seats, executes mock checkout, manages profile and view ticket wallet.
+- **ORGANIZER:** Manages event catalog, releases VIP courtesies, pauses/publishes events, and configures gatekeeper staff.
+- **PORTARIA:** Dedicated single-purpose scanning interface for rapid entry gate verification.
+- **SUPER_ADMIN:** Master platform governance over producer accounts, service fees, and account suspensions.
 
+## Local Setup and Installation
+
+### Prerequisites
+- Node.js Runtime (v18.0.0 or higher)
+- npm or yarn package manager
+
+### Installation Steps
+
+1. Clone the repository and install root and package dependencies:
 ```bash
-# Initialize dependencies globally
+git clone https://github.com/Rafasay16/elite-tickets.git
+cd elite-tickets
 npm install
 npm run install:all
 ```
 
-### Environment Configuration
+2. Configure Environment Variables:
 
-#### Backend Environment
-Create a `.env` file in the `backend` directory containing the database and security configurations:
+Backend environment (`backend/.env`):
 ```env
 PORT=3333
 DATABASE_URL="postgresql://user:password@host:port/database"
 DIRECT_URL="postgresql://user:password@host:port/database"
-JWT_SECRET="your_secure_jwt_key"
+JWT_SECRET="your_secure_jwt_secret_key"
 ```
 
-Deploy the database schema to the PostgreSQL instance:
+Frontend environment (`frontend/.env` or `frontend/.env.local`):
+```env
+NEXT_PUBLIC_API_URL="http://localhost:3333/api"
+```
+
+3. Initialize the Database:
 ```bash
 cd backend
 npx prisma generate
 npx prisma db push
+npx tsx prisma/seed.ts
+cd ..
 ```
 
-#### Frontend Environment
-Create a `.env` file in the `frontend` directory containing integration endpoints:
-```env
-NEXT_PUBLIC_API_URL="http://localhost:3333"
-```
-
-### Local Development Server
-
-To initialize the application locally, start the concurrent development servers from the root directory:
-
+4. Launch Local Development Servers:
 ```bash
 npm run dev
 ```
 
-The frontend application will compile and serve on `http://localhost:3000`, while the backend API will initialize on `http://localhost:3333`.
+The frontend application will be accessible at `http://localhost:3000` and the backend API at `http://localhost:3333`.
 
-## Development Test Data
+## Test Credentials for Development
 
-The project includes an automated seeding script that populates the database with real-world API data (TMDb and Ticketmaster) and exclusive regional events (e.g., Campina Grande, João Pessoa, Recife).
+- **Client Accounts:**
+  - Email: `rafinha@gmail.com` | Password: `123456`
+  - Email: `reuel@gmail.com` | Password: `123456`
+- **Organizer Account:**
+  - Email: `admin@admin.com` | Password: `123456`
+- **Gatekeeper Account (Portaria):**
+  - Email: `portaria@elite.com` | Password: `123456`
+- **Super Administrator Account:**
+  - Email: `superadmin@elite.com` | Password: `123456`
 
-To execute the seed sequence:
+## Production Build Verification
+
+To build and validate the production bundles across all packages:
 ```bash
-cd backend
-npx tsx prisma/seed.ts
+npm run build --prefix frontend
+npm run build --prefix backend
 ```
 
-Standardized authentication credentials for development testing:
+## License
 
-- **Client Role:**
-  - Email: `rafinha@gmail.com`
-  - Password: `123456`
-  - Email: `reuel@gmail.com` (New test account)
-  - Password: `123456`
-- **Organizer Role:**
-  - Email: `admin@admin.com`
-  - Password: `123456`
-- **Gatekeeper Role (Portaria):**
-  - Email: `portaria@elite.com`
-  - Password: `123456`
-- **Super Administrator Role:**
-  - Email: `superadmin@elite.com`
-  - Password: `123456`
-
-## Troubleshooting
-
-If something is not working as expected when setting up or running the application, check the following points:
-
-1. **Database connection error:** Ensure that the connection string in the backend's `.env` file is correct and that your machine's IP is authorized in the database provider (e.g., Supabase).
-2. **Frontend fails to run:** Verify if the `NEXT_PUBLIC_API_URL` variable is pointing correctly to `http://localhost:3333` and if the backend server is running simultaneously.
-3. **Events do not appear on the screen:** The database might be empty. Make sure to run the seed command (`npx tsx prisma/seed.ts` inside the `backend` folder).
-4. **Login fails:** Check if the database was seeded. Test passwords are always `123456`. If the problem persists, create a new account through the application's registration flow.
-
-## Known Issues and Limitations
-
-As part of the project's current scope and development constraints, the following limitations exist:
-- **Payment Processing:** The checkout process is a mock simulation. No real financial transactions are processed, and credit card data is not sent to any external gateway.
-- **Email Notifications:** The system does not currently send real emails for account creation or ticket purchases. Tickets and QR Codes must be viewed directly within the application's user dashboard.
-- **Responsiveness:** While the application is designed to be responsive, some complex administrative data tables might require horizontal scrolling on smaller mobile devices.
+This project is distributed under the MIT License.
