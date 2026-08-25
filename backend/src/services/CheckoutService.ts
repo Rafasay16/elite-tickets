@@ -91,19 +91,48 @@ export class CheckoutService {
 
     const reservation = await prisma.reservation.findFirst({
       where: { id: { startsWith: searchId } },
-      include: { seat: true, event: true }
+      include: {
+        seat: true,
+        event: true,
+        user: { select: { id: true, name: true, email: true } }
+      }
     });
 
     if (!reservation) throw new Error(`Inválido: Não encontrado (Buscando: ${searchId})`);
     if (reservation.eventId !== eventId) throw new Error('Evento errado');
-    if (reservation.status === 'USED') throw new Error('JÁ UTILIZADO');
+    
+    const customerName = reservation.user?.name || 'Cliente';
+    const seatInfo = `Fila ${reservation.seat.row} - Num ${reservation.seat.number}`;
+    const eventTitle = reservation.event.title;
+
+    if (reservation.status === 'USED') {
+      const err: any = new Error('JÁ UTILIZADO');
+      err.data = {
+        customerName,
+        scannedAt: reservation.scannedAt,
+        seat: seatInfo,
+        eventTitle,
+        ticketId: reservation.id
+      };
+      throw err;
+    }
+    
     if (reservation.status !== 'PAID') throw new Error('Ingresso não pago ou cancelado.');
 
+    const scannedAt = new Date();
     await prisma.reservation.update({
       where: { id: reservation.id },
-      data: { status: 'USED', scannedAt: new Date(), scannedById: userId }
+      data: { status: 'USED', scannedAt, scannedById: userId }
     });
 
-    return `Assento: Fila ${reservation.seat.row} - Num ${reservation.seat.number}`;
+    return {
+      message: 'Acesso Liberado!',
+      customerName,
+      scannedAt,
+      seat: seatInfo,
+      eventTitle,
+      ticketId: reservation.id,
+      details: `Assento: ${seatInfo}`
+    };
   }
 }

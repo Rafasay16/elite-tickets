@@ -1,10 +1,21 @@
 'use client';
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Html5QrcodeScanner, Html5QrcodeScanType } from "html5-qrcode";
+
+interface ValidationResult {
+  status: 'success' | 'warning' | 'error';
+  title: string;
+  customerName?: string;
+  scannedAt?: string | Date;
+  seat?: string;
+  eventTitle?: string;
+  ticketId?: string;
+  details?: string;
+}
 
 export default function PortariaPage() {
   const [manualCode, setManualCode] = useState("");
-  const [result, setResult] = useState<{ status: 'success' | 'error' | 'warning', message: string, details?: string } | null>(null);
+  const [result, setResult] = useState<ValidationResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [events, setEvents] = useState<any[]>([]);
   const [selectedEventId, setSelectedEventId] = useState("");
@@ -27,6 +38,27 @@ export default function PortariaPage() {
     fetchEvents();
   }, []);
 
+  const closeModal = useCallback(() => {
+    setResult(null);
+    setManualCode("");
+    isScanningRef.current = false;
+  }, []);
+
+  // Atalhos de teclado para fechar o modal rapidamente na portaria
+  useEffect(() => {
+    if (!result) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        closeModal();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [result, closeModal]);
+
   useEffect(() => {
     // Inicializar o scanner apenas quando houver um evento selecionado e montado
     if (!selectedEventId) return;
@@ -40,12 +72,12 @@ export default function PortariaPage() {
 
       scannerRef.current.render(
         (decodedText) => {
-          // Evitar scan duplo enquanto carrega
+          // Evitar scan duplo enquanto carrega ou modal está aberto
           if (!isScanningRef.current) {
             validateCode(decodedText);
           }
         },
-        (error) => {
+        () => {
           // ignore background scan errors
         }
       );
@@ -57,7 +89,7 @@ export default function PortariaPage() {
         scannerRef.current = null;
       }
     };
-  }, [selectedEventId]); // Re-render scanner if event changes (or just keep it alive)
+  }, [selectedEventId]);
 
   const validateCode = async (code: string) => {
     if (!selectedEventId) {
@@ -84,38 +116,72 @@ export default function PortariaPage() {
       const data = await res.json();
       
       if (!res.ok) {
-        if (data.error.includes('JÁ UTILIZADO')) {
-           setResult({ status: 'warning', message: 'Já Utilizado', details: 'Este ingresso já deu entrada no evento.' });
-        } else if (data.error.includes('Evento errado')) {
-           setResult({ status: 'error', message: 'Evento Errado', details: 'Este ingresso pertence a outro evento.' });
+        if (data.error && data.error.includes('JÁ UTILIZADO')) {
+           setResult({ 
+             status: 'warning', 
+             title: 'Ingresso Já Utilizado!', 
+             customerName: data.customerName || 'Cliente Identificado',
+             scannedAt: data.scannedAt,
+             seat: data.seat,
+             eventTitle: data.eventTitle,
+             ticketId: data.ticketId,
+             details: 'Este ingresso já realizou o check-in na portaria. Entrada duplicada proibida!' 
+           });
+        } else if (data.error && data.error.includes('Evento errado')) {
+           setResult({ 
+             status: 'error', 
+             title: 'Evento Não Correspondente', 
+             details: 'Este ingresso pertence a outro evento ou sessão diferente da selecionada.' 
+           });
         } else {
-           setResult({ status: 'error', message: 'Inválido', details: data.error || 'QR Code não reconhecido no sistema.' });
+           setResult({ 
+             status: 'error', 
+             title: 'Ingresso Inválido', 
+             details: data.error || 'Código ou QR Code não reconhecido no sistema.' 
+           });
         }
       } else {
-        setResult({ status: 'success', message: 'Acesso Liberado!', details: data.details });
+        setResult({ 
+          status: 'success', 
+          title: 'Acesso Liberado!', 
+          customerName: data.customerName,
+          scannedAt: data.scannedAt || new Date().toISOString(),
+          seat: data.seat,
+          eventTitle: data.eventTitle,
+          ticketId: data.ticketId,
+          details: data.details || 'Check-in realizado com sucesso.'
+        });
       }
     } catch (err) {
-      setResult({ status: 'error', message: 'Erro de Conexão' });
+      setResult({ 
+        status: 'error', 
+        title: 'Erro de Conexão', 
+        details: 'Não foi possível se comunicar com o servidor. Verifique a rede.' 
+      });
     }
     
     setLoading(false);
-    
-    // Pequeno delay para evitar leitura múltipla acidental
-    setTimeout(() => {
-      isScanningRef.current = false;
-    }, 2000);
   };
 
   const handleManualSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (manualCode) {
-      validateCode(manualCode);
-      setManualCode(""); // Limpar apos submeter
+    if (manualCode.trim()) {
+      validateCode(manualCode.trim());
     }
   };
 
+  const formatScannedTime = (dateVal?: string | Date) => {
+    if (!dateVal) return { time: new Date().toLocaleTimeString('pt-BR'), date: new Date().toLocaleDateString('pt-BR') };
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return { time: String(dateVal), date: '' };
+    return {
+      time: d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+      date: d.toLocaleDateString('pt-BR')
+    };
+  };
+
   return (
-    <main className="container" style={{ padding: '4rem 1.5rem', maxWidth: '600px' }}>
+    <main className="container" style={{ padding: '4rem 1.5rem', maxWidth: '640px' }}>
       <h1 className="neon-text" style={{ textAlign: 'center', marginBottom: '2rem' }}>Controle de Portaria</h1>
       
       <div className="glass-panel" style={{ padding: '2rem' }}>
@@ -150,7 +216,7 @@ export default function PortariaPage() {
         <div style={{ marginBottom: '2rem' }}>
           <h3 style={{ marginBottom: '1rem', textAlign: 'center' }}>Leitura por Câmera</h3>
           {!selectedEventId && <p style={{ textAlign: 'center', color: 'var(--danger)' }}>Selecione o evento acima para ligar a câmera.</p>}
-          <div id="qr-reader" style={{ width: '100%', maxWidth: '400px', margin: '0 auto', background: 'white' }}></div>
+          <div id="qr-reader" style={{ width: '100%', maxWidth: '400px', margin: '0 auto', background: 'white', borderRadius: '12px', overflow: 'hidden' }}></div>
         </div>
 
         <div style={{ textAlign: 'center', marginBottom: '2rem', color: 'var(--text-secondary)' }}>OU</div>
@@ -161,37 +227,280 @@ export default function PortariaPage() {
             placeholder="Digite o código manualmente (ID)" 
             value={manualCode}
             onChange={(e) => setManualCode(e.target.value)}
-            style={{ flex: 1, padding: '0.75rem 1.5rem', borderRadius: '9999px', border: '1px solid var(--border-glass)', background: 'transparent', color: 'var(--text-primary)', outline: 'none' }}
+            style={{ 
+              flex: 1, 
+              padding: '0.75rem 1.5rem', 
+              borderRadius: '9999px', 
+              border: '1px solid var(--border-glass)', 
+              background: 'rgba(0, 0, 0, 0.2)', 
+              color: 'var(--text-primary)', 
+              outline: 'none' 
+            }}
           />
-          <button type="submit" className="btn btn-primary" disabled={loading || !selectedEventId}>Validar</button>
+          <button type="submit" className="btn btn-primary" disabled={loading || !selectedEventId}>
+            {loading ? 'Validando...' : 'Validar'}
+          </button>
         </form>
+      </div>
 
-        {loading && <p style={{ textAlign: 'center', marginTop: '1rem' }}>Validando...</p>}
-
-        {result && (
-          <div style={{
-            marginTop: '2rem',
-            padding: '1.5rem',
-            borderRadius: '8px',
-            textAlign: 'center',
-            background: result.status === 'success' ? 'rgba(52, 211, 153, 0.2)' : result.status === 'warning' ? 'rgba(251, 191, 36, 0.2)' : 'rgba(239, 68, 68, 0.2)',
-            border: `1px solid ${result.status === 'success' ? 'var(--success)' : result.status === 'warning' ? '#fbbf24' : 'var(--danger)'}`
-          }}>
-            <h2 style={{ color: result.status === 'success' ? 'var(--success)' : result.status === 'warning' ? '#fbbf24' : 'var(--danger)' }}>
-              {result.message}
-            </h2>
-            {result.details && <p style={{ marginTop: '0.5rem', color: 'var(--text-primary)' }}>{result.details}</p>}
-            
+      {/* MODAL EXPANDIDO DE ALTA VISIBILIDADE / RESULTADO DA VALIDAÇÃO */}
+      {result && (
+        <div 
+          role="dialog"
+          aria-modal="true"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closeModal();
+          }}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(10, 15, 30, 0.85)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1.25rem'
+          }}
+        >
+          <div 
+            className="glass-panel"
+            style={{
+              width: '100%',
+              maxWidth: '620px',
+              padding: '2.5rem 2rem',
+              borderRadius: '24px',
+              textAlign: 'center',
+              position: 'relative',
+              boxShadow: result.status === 'success' 
+                ? '0 0 50px rgba(16, 185, 129, 0.35), 0 25px 50px rgba(0,0,0,0.8)' 
+                : result.status === 'warning' 
+                ? '0 0 50px rgba(245, 158, 11, 0.35), 0 25px 50px rgba(0,0,0,0.8)' 
+                : '0 0 50px rgba(239, 68, 68, 0.35), 0 25px 50px rgba(0,0,0,0.8)',
+              border: `2px solid ${
+                result.status === 'success' ? '#10b981' : result.status === 'warning' ? '#f59e0b' : '#ef4444'
+              }`,
+              background: result.status === 'success'
+                ? 'linear-gradient(180deg, rgba(16, 185, 129, 0.15) 0%, rgba(15, 23, 42, 0.95) 100%)'
+                : result.status === 'warning'
+                ? 'linear-gradient(180deg, rgba(245, 158, 11, 0.15) 0%, rgba(15, 23, 42, 0.95) 100%)'
+                : 'linear-gradient(180deg, rgba(239, 68, 68, 0.15) 0%, rgba(15, 23, 42, 0.95) 100%)'
+            }}
+          >
+            {/* Botão Fechar no Canto Superior */}
             <button 
-              className="btn btn-secondary" 
-              style={{ marginTop: '1rem' }} 
-              onClick={() => setResult(null)}
+              onClick={closeModal}
+              title="Fechar (Esc)"
+              style={{
+                position: 'absolute',
+                top: '1.25rem',
+                right: '1.25rem',
+                background: 'rgba(255, 255, 255, 0.08)',
+                border: '1px solid var(--border-glass)',
+                color: 'var(--text-secondary)',
+                fontSize: '1.5rem',
+                cursor: 'pointer',
+                borderRadius: '50%',
+                width: '40px',
+                height: '40px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s ease'
+              }}
             >
-              Limpar / Escanear Próximo
+              &times;
+            </button>
+
+            {/* Ícone Gigante de Status */}
+            <div style={{
+              width: '84px',
+              height: '84px',
+              margin: '0 auto 1.5rem auto',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: result.status === 'success' 
+                ? 'rgba(16, 185, 129, 0.2)' 
+                : result.status === 'warning' 
+                ? 'rgba(245, 158, 11, 0.2)' 
+                : 'rgba(239, 68, 68, 0.2)',
+              border: `2px solid ${
+                result.status === 'success' ? '#10b981' : result.status === 'warning' ? '#f59e0b' : '#ef4444'
+              }`,
+              boxShadow: `0 0 25px ${
+                result.status === 'success' ? 'rgba(16, 185, 129, 0.5)' : result.status === 'warning' ? 'rgba(245, 158, 11, 0.5)' : 'rgba(239, 68, 68, 0.5)'
+              }`
+            }}>
+              {result.status === 'success' && (
+                <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+              )}
+              {result.status === 'warning' && (
+                <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                  <line x1="12" y1="9" x2="12" y2="13"></line>
+                  <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+              )}
+              {result.status === 'error' && (
+                <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              )}
+            </div>
+
+            {/* Título de Status */}
+            <h2 style={{ 
+              fontSize: '2rem', 
+              fontWeight: '800', 
+              letterSpacing: '-0.02em',
+              marginBottom: '1.25rem',
+              color: result.status === 'success' ? '#10b981' : result.status === 'warning' ? '#f59e0b' : '#ef4444' 
+            }}>
+              {result.title}
+            </h2>
+
+            {/* Grid de Informações com Nome do Cliente, Horário, Assento e Evento */}
+            {(result.customerName || result.scannedAt || result.seat) && (
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                gap: '1rem',
+                margin: '1.5rem 0',
+                textAlign: 'left'
+              }}>
+                {/* Nome do Cliente (Nome e Sobrenome) */}
+                <div style={{
+                  background: 'rgba(0, 0, 0, 0.35)',
+                  padding: '1rem 1.25rem',
+                  borderRadius: '14px',
+                  border: '1px solid rgba(255, 255, 255, 0.08)'
+                }}>
+                  <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                    👤 Cliente / Titular
+                  </div>
+                  <div style={{ fontSize: '1.25rem', fontWeight: '700', color: 'white', wordBreak: 'break-word' }}>
+                    {result.customerName || 'Não identificado'}
+                  </div>
+                </div>
+
+                {/* Horário da Liberação */}
+                <div style={{
+                  background: 'rgba(0, 0, 0, 0.35)',
+                  padding: '1rem 1.25rem',
+                  borderRadius: '14px',
+                  border: '1px solid rgba(255, 255, 255, 0.08)'
+                }}>
+                  <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                    🕒 {result.status === 'warning' ? 'Liberado Anteriormente Em' : 'Hora da Liberação'}
+                  </div>
+                  <div style={{ 
+                    fontSize: '1.25rem', 
+                    fontWeight: '700', 
+                    color: result.status === 'success' ? '#34d399' : result.status === 'warning' ? '#fbbf24' : 'white' 
+                  }}>
+                    {formatScannedTime(result.scannedAt).time}
+                  </div>
+                  {formatScannedTime(result.scannedAt).date && (
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                      {formatScannedTime(result.scannedAt).date}
+                    </div>
+                  )}
+                </div>
+
+                {/* Assento */}
+                {result.seat && (
+                  <div style={{
+                    background: 'rgba(0, 0, 0, 0.35)',
+                    padding: '1rem 1.25rem',
+                    borderRadius: '14px',
+                    border: '1px solid rgba(255, 255, 255, 0.08)'
+                  }}>
+                    <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                      💺 Assento Reservado
+                    </div>
+                    <div style={{ fontSize: '1.15rem', fontWeight: '700', color: 'white' }}>
+                      {result.seat}
+                    </div>
+                  </div>
+                )}
+
+                {/* Evento & Ticket ID */}
+                <div style={{
+                  background: 'rgba(0, 0, 0, 0.35)',
+                  padding: '1rem 1.25rem',
+                  borderRadius: '14px',
+                  border: '1px solid rgba(255, 255, 255, 0.08)'
+                }}>
+                  <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                    🎬 Evento / Código
+                  </div>
+                  <div style={{ fontSize: '1.05rem', fontWeight: '600', color: 'white', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {result.eventTitle || 'Evento Selecionado'}
+                  </div>
+                  {result.ticketId && (
+                    <div style={{ fontSize: '0.75rem', fontFamily: 'monospace', color: 'var(--text-secondary)' }}>
+                      #{result.ticketId.substring(0, 8)}...
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Detalhes / Alerta de Erro ou Advertência */}
+            {result.details && (
+              <div style={{
+                padding: '0.9rem 1.25rem',
+                borderRadius: '12px',
+                marginBottom: '1.75rem',
+                fontSize: '0.95rem',
+                background: result.status === 'success' 
+                  ? 'rgba(16, 185, 129, 0.1)' 
+                  : result.status === 'warning' 
+                  ? 'rgba(245, 158, 11, 0.15)' 
+                  : 'rgba(239, 68, 68, 0.15)',
+                color: result.status === 'success' 
+                  ? '#a7f3d0' 
+                  : result.status === 'warning' 
+                  ? '#fde68a' 
+                  : '#fca5a5',
+                border: `1px solid ${
+                  result.status === 'success' ? 'rgba(16, 185, 129, 0.3)' : result.status === 'warning' ? 'rgba(245, 158, 11, 0.4)' : 'rgba(239, 68, 68, 0.4)'
+                }`
+              }}>
+                {result.details}
+              </div>
+            )}
+
+            {/* Botão de Ação Rápida */}
+            <button 
+              className="btn btn-primary" 
+              onClick={closeModal}
+              autoFocus
+              style={{ 
+                width: '100%', 
+                padding: '1rem', 
+                fontSize: '1.15rem', 
+                fontWeight: '700',
+                borderRadius: '14px',
+                background: result.status === 'success' 
+                  ? 'var(--accent-neon)' 
+                  : result.status === 'warning' 
+                  ? '#d97706' 
+                  : '#dc2626'
+              }}
+            >
+              Escanear Próximo (Enter / Espaço)
             </button>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </main>
   );
 }
+
