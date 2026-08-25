@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import styles from './Perfil.module.css';
 
 const AVATARS = [
@@ -13,11 +14,24 @@ const AVATARS = [
   'https://api.dicebear.com/9.x/avataaars/svg?seed=Mia',
 ];
 
-export default function PerfilClient({ initialProfile, sessionToken }: { initialProfile: any, sessionToken: string }) {
+interface PerfilClientProps {
+  initialProfile: {
+    name?: string;
+    email?: string;
+    city?: string;
+    phone?: string;
+    photoUrl?: string;
+    preferences?: string;
+    paymentMock?: string;
+  };
+  sessionToken: string;
+}
+
+export default function PerfilClient({ initialProfile, sessionToken }: PerfilClientProps) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState('dados');
+  const [activeTab, setActiveTab] = useState<'dados' | 'seguranca' | 'pagamento' | 'preferencias'>('dados');
   
-  // States
+  // Form states
   const [formData, setFormData] = useState({
     name: initialProfile.name || '',
     email: initialProfile.email || '',
@@ -28,23 +42,30 @@ export default function PerfilClient({ initialProfile, sessionToken }: { initial
     newPassword: '',
   });
 
-  const [preferences, setPreferences] = useState<{newsletter: boolean, sms: boolean}>(() => {
-    try { return JSON.parse(initialProfile.preferences) || { newsletter: true, sms: false }; }
-    catch { return { newsletter: true, sms: false }; }
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+
+  const [preferences, setPreferences] = useState<{ newsletter: boolean; sms: boolean }>(() => {
+    try {
+      return JSON.parse(initialProfile.preferences || '{}') || { newsletter: true, sms: false };
+    } catch {
+      return { newsletter: true, sms: false };
+    }
   });
 
-  const [paymentMocks, setPaymentMocks] = useState<{cardNumber: string, name: string, expiry: string, status: string}[]>(() => {
+  const [paymentMocks, setPaymentMocks] = useState<{ cardNumber: string; name: string; expiry: string; status: string }[]>(() => {
     const defaults = [
-      { cardNumber: '**** **** **** 1234', name: initialProfile.name || 'JOÃO SILVA', expiry: '12/29', status: 'approved' },
-      { cardNumber: '**** **** **** 0000', name: initialProfile.name || 'JOÃO SILVA', expiry: '12/29', status: 'declined' }
+      { cardNumber: '**** **** **** 4892', name: initialProfile.name || 'CLIENTE ELITE', expiry: '08/29', status: 'approved' },
+      { cardNumber: '**** **** **** 1024', name: initialProfile.name || 'CLIENTE ELITE', expiry: '11/27', status: 'declined' }
     ];
-    try { 
-      const parsed = JSON.parse(initialProfile.paymentMock);
+    try {
+      const parsed = JSON.parse(initialProfile.paymentMock || '[]');
       if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       if (parsed && parsed.cardNumber) return [parsed, defaults[1]];
       return defaults;
+    } catch {
+      return defaults;
     }
-    catch { return defaults; }
   });
 
   const [loading, setLoading] = useState(false);
@@ -52,7 +73,7 @@ export default function PerfilClient({ initialProfile, sessionToken }: { initial
   const [error, setError] = useState('');
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
   const handleSave = async () => {
@@ -69,7 +90,6 @@ export default function PerfilClient({ initialProfile, sessionToken }: { initial
         paymentMock: JSON.stringify(paymentMocks),
       };
 
-      // Remove senhas vazias para não disparar o erro de validação (zod min length)
       if (!payload.currentPassword) delete payload.currentPassword;
       if (!payload.newPassword) delete payload.newPassword;
 
@@ -85,10 +105,9 @@ export default function PerfilClient({ initialProfile, sessionToken }: { initial
       const data = await res.json();
       if (res.ok) {
         setMessage('Perfil atualizado com sucesso!');
-        setFormData(prev => ({ ...prev, currentPassword: '', newPassword: '' })); // clear passwords
-        // Define o cookie da cidade para sincronizar a navegação com o perfil
+        setFormData((prev) => ({ ...prev, currentPassword: '', newPassword: '' }));
         if (formData.city) {
-          document.cookie = `city=${encodeURIComponent(formData.city)}; path=/; max-age=31536000`; // 1 ano
+          document.cookie = `city=${encodeURIComponent(formData.city)}; path=/; max-age=31536000`;
         }
         router.refresh();
       } else {
@@ -101,159 +120,356 @@ export default function PerfilClient({ initialProfile, sessionToken }: { initial
     }
   };
 
+  const addNewCard = () => {
+    const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+    const newCard = { 
+      cardNumber: `**** **** **** ${randomSuffix}`, 
+      name: formData.name ? formData.name.toUpperCase() : 'NOVO TITULAR', 
+      expiry: '12/32', 
+      status: 'approved' 
+    };
+    setPaymentMocks((prev) => [...prev, newCard]);
+  };
+
   return (
     <div className={styles.container}>
-      <div className={styles.sidebar}>
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <img src={formData.photoUrl} alt="Avatar" className={styles.avatarLarge} />
-          <h3 style={{ margin: '1rem 0 0.2rem' }}>{formData.name}</h3>
-          <p className="text-secondary" style={{ fontSize: '0.85rem' }}>{formData.email}</p>
+      {/* SIDEBAR DO PERFIL */}
+      <aside className={styles.sidebar}>
+        <div className={styles.avatarHeader}>
+          <div className={styles.avatarWrapper}>
+            <Image
+              src={formData.photoUrl}
+              alt="Avatar do Usuário"
+              width={96}
+              height={96}
+              className={styles.avatarLarge}
+              unoptimized
+            />
+          </div>
+          <h3 className={styles.profileName}>{formData.name || 'Usuário'}</h3>
+          <p className={styles.profileEmail}>{formData.email}</p>
         </div>
+
         <nav className={styles.nav}>
-          <button className={`${styles.navBtn} ${activeTab === 'dados' ? styles.active : ''}`} onClick={() => setActiveTab('dados')}>Dados Pessoais</button>
-          <button className={`${styles.navBtn} ${activeTab === 'seguranca' ? styles.active : ''}`} onClick={() => setActiveTab('seguranca')}>Segurança</button>
-          <button className={`${styles.navBtn} ${activeTab === 'pagamento' ? styles.active : ''}`} onClick={() => setActiveTab('pagamento')}>Pagamentos (Mock)</button>
-          <button className={`${styles.navBtn} ${activeTab === 'preferencias' ? styles.active : ''}`} onClick={() => setActiveTab('preferencias')}>Preferências</button>
+          <button
+            type="button"
+            className={`${styles.navBtn} ${activeTab === 'dados' ? styles.navBtnActive : ''}`}
+            onClick={() => setActiveTab('dados')}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
+            Dados Pessoais
+          </button>
+
+          <button
+            type="button"
+            className={`${styles.navBtn} ${activeTab === 'seguranca' ? styles.navBtnActive : ''}`}
+            onClick={() => setActiveTab('seguranca')}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
+            Segurança
+          </button>
+
+          <button
+            type="button"
+            className={`${styles.navBtn} ${activeTab === 'pagamento' ? styles.navBtnActive : ''}`}
+            onClick={() => setActiveTab('pagamento')}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
+              <line x1="1" y1="10" x2="23" y2="10" />
+            </svg>
+            Pagamentos (Mock)
+          </button>
+
+          <button
+            type="button"
+            className={`${styles.navBtn} ${activeTab === 'preferencias' ? styles.navBtnActive : ''}`}
+            onClick={() => setActiveTab('preferencias')}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+            </svg>
+            Preferências
+          </button>
         </nav>
-      </div>
+      </aside>
 
-      <div className={styles.content}>
-        {message && <div style={{ padding: '1rem', background: 'rgba(0, 255, 0, 0.1)', color: '#4ade80', borderRadius: '8px', marginBottom: '1.5rem' }}>{message}</div>}
-        {error && <div style={{ padding: '1rem', background: 'rgba(255, 0, 0, 0.1)', color: '#ef4444', borderRadius: '8px', marginBottom: '1.5rem' }}>{error}</div>}
+      {/* CONTEÚDO DA ABA ATIVA */}
+      <main className={styles.content}>
+        {message && (
+          <div style={{ padding: '1rem 1.25rem', background: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.3)', color: '#10b981', borderRadius: '12px', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            {message}
+          </div>
+        )}
 
+        {error && (
+          <div style={{ padding: '1rem 1.25rem', background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#ef4444', borderRadius: '12px', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            {error}
+          </div>
+        )}
+
+        {/* ABA: DADOS PESSOAIS */}
         {activeTab === 'dados' && (
-          <div className="glass-panel" style={{ padding: '2rem' }}>
-            <h2>Meus Dados</h2>
-            
-            <div style={{ marginBottom: '1.5rem' }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem' }}>Escolha um Avatar</label>
-              <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-                {AVATARS.map(avatar => (
-                  <img 
-                    key={avatar} 
-                    src={avatar} 
-                    alt="avatar option" 
-                    className={`${styles.avatarOption} ${formData.photoUrl === avatar ? styles.selectedAvatar : ''}`}
-                    onClick={() => setFormData(prev => ({ ...prev, photoUrl: avatar }))}
+          <div className={styles.panel}>
+            <h2 className={styles.panelTitle}>Dados Pessoais</h2>
+            <p className={styles.panelSubtitle}>Atualize suas informações cadastrais e escolha seu avatar preferido.</p>
+
+            <div className={styles.avatarSection}>
+              <span className={styles.sectionLabel}>Escolha seu Avatar</span>
+              <div className={styles.avatarGrid}>
+                {AVATARS.map((avatar) => (
+                  <Image
+                    key={avatar}
+                    src={avatar}
+                    alt="Opção de avatar"
+                    width={64}
+                    height={64}
+                    className={`${styles.avatarOption} ${formData.photoUrl === avatar ? styles.avatarOptionSelected : ''}`}
+                    onClick={() => setFormData((prev) => ({ ...prev, photoUrl: avatar }))}
+                    unoptimized
                   />
                 ))}
               </div>
             </div>
 
-            <div className={styles.inputGroup}>
-              <label>Nome Completo</label>
-              <input type="text" name="name" className="input" value={formData.name} onChange={handleChange} />
-            </div>
-            <div className={styles.inputGroup}>
-              <label>E-mail</label>
-              <input type="email" name="email" className="input" value={formData.email} onChange={handleChange} />
-            </div>
-            <div className={styles.inputGroup}>
-              <label>Cidade</label>
-              <input type="text" name="city" className="input" value={formData.city} onChange={handleChange} />
-            </div>
-            <div className={styles.inputGroup}>
-              <label>Telefone <span style={{fontSize:'0.75rem', color:'var(--text-secondary)'}}>(Opcional)</span></label>
-              <input type="tel" name="phone" className="input" value={formData.phone} onChange={handleChange} placeholder="(11) 99999-9999" />
-              <div style={{fontSize:'0.75rem', color:'var(--text-secondary)', marginTop:'0.25rem'}}>Usado caso opte por receber avisos por SMS nas Preferências.</div>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'seguranca' && (
-          <div className="glass-panel" style={{ padding: '2rem' }}>
-            <h2>Alterar Senha</h2>
-            <p className="text-secondary" style={{ marginBottom: '1.5rem' }}>Para alterar sua senha, informe a senha atual.</p>
-            <div className={styles.inputGroup}>
-              <label>Senha Atual</label>
-              <input type="password" name="currentPassword" className="input" value={formData.currentPassword} onChange={handleChange} />
-            </div>
-            <div className={styles.inputGroup}>
-              <label>Nova Senha</label>
-              <input type="password" name="newPassword" className="input" value={formData.newPassword} onChange={handleChange} />
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'pagamento' && (
-          <div className="glass-panel" style={{ padding: '2rem' }}>
-            <h2>Métodos de Pagamento</h2>
-            <p className="text-secondary" style={{ marginBottom: '1.5rem' }}>Seus cartões salvos para compras rápidas. (Ambiente Simulado)</p>
-            
-            {paymentMocks.map((mock, idx) => (
-              <div key={idx} style={{ background: 'rgba(255,255,255,0.05)', padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--border-glass)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                  <div style={{ width: '50px', height: '32px', background: mock.status === 'declined' ? 'var(--danger)' : 'var(--accent-neon)', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: mock.status === 'declined' ? '#fff' : '#000', fontWeight: 'bold', fontSize: '0.75rem' }}>VISA</div>
-                  <div>
-                    <div style={{ fontWeight: 'bold' }}>{mock.cardNumber} {mock.status === 'declined' ? '(Recusado)' : ''}</div>
-                    <div className="text-secondary" style={{ fontSize: '0.85rem' }}>Expira em {mock.expiry}</div>
-                  </div>
+            <div className={styles.formGrid}>
+              <div className={styles.inputGroup}>
+                <label>Nome Completo</label>
+                <div className={styles.inputWrapper}>
+                  <svg className={styles.inputIcon} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                  <input
+                    type="text"
+                    name="name"
+                    className={styles.inputField}
+                    value={formData.name}
+                    onChange={handleChange}
+                  />
                 </div>
-                <button 
-                  className="btn btn-secondary" 
-                  style={{ color: 'var(--danger)', borderColor: 'rgba(220, 38, 38, 0.3)' }}
-                  onClick={() => setPaymentMocks(prev => prev.filter((_, i) => i !== idx))}
+              </div>
+
+              <div className={styles.inputGroup}>
+                <label>E-mail</label>
+                <div className={styles.inputWrapper}>
+                  <svg className={styles.inputIcon} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                  <input
+                    type="email"
+                    name="email"
+                    className={styles.inputField}
+                    value={formData.email}
+                    onChange={handleChange}
+                  />
+                </div>
+              </div>
+
+              <div className={styles.inputGroup}>
+                <label>Cidade Padrão</label>
+                <div className={styles.inputWrapper}>
+                  <svg className={styles.inputIcon} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                  <input
+                    type="text"
+                    name="city"
+                    className={styles.inputField}
+                    placeholder="Ex: Campina Grande, Recife, João Pessoa"
+                    value={formData.city}
+                    onChange={handleChange}
+                  />
+                </div>
+              </div>
+
+              <div className={styles.inputGroup}>
+                <label>Telefone / WhatsApp</label>
+                <div className={styles.inputWrapper}>
+                  <svg className={styles.inputIcon} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                  <input
+                    type="tel"
+                    name="phone"
+                    className={styles.inputField}
+                    value={formData.phone}
+                    onChange={handleChange}
+                    placeholder="(83) 99999-9999"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ABA: SEGURANÇA */}
+        {activeTab === 'seguranca' && (
+          <div className={styles.panel}>
+            <h2 className={styles.panelTitle}>Segurança da Conta</h2>
+            <p className={styles.panelSubtitle}>Para alterar sua senha de acesso, informe a senha atual e defina a nova chave.</p>
+
+            <div className={styles.inputGroup} style={{ maxWidth: '480px' }}>
+              <label>Senha Atual</label>
+              <div className={styles.inputWrapper}>
+                <input
+                  type={showCurrentPassword ? 'text' : 'password'}
+                  name="currentPassword"
+                  className={`${styles.inputField} ${styles.inputFieldNoIcon}`}
+                  value={formData.currentPassword}
+                  onChange={handleChange}
+                  placeholder="Digite sua senha atual"
+                />
+                <button
+                  type="button"
+                  className={styles.passwordToggle}
+                  onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                  aria-label="Alternar visibilidade da senha"
                 >
-                  Remover
+                  {showCurrentPassword ? (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                  ) : (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  )}
                 </button>
               </div>
-            ))}
-            <button 
-              className="btn btn-primary" 
-              style={{ marginTop: '0.5rem', width: '100%' }}
-              onClick={() => {
-                const newCard = { 
-                  cardNumber: `**** **** **** ${Math.floor(1000 + Math.random() * 9000)}`, 
-                  name: formData.name || 'NOVO CARTAO', 
-                  expiry: '12/32', 
-                  status: 'approved' 
-                };
-                setPaymentMocks(prev => [...prev, newCard]);
-              }}
-            >
-              + Adicionar Novo Cartão Simulado
-            </button>
+            </div>
+
+            <div className={styles.inputGroup} style={{ maxWidth: '480px' }}>
+              <label>Nova Senha</label>
+              <div className={styles.inputWrapper}>
+                <input
+                  type={showNewPassword ? 'text' : 'password'}
+                  name="newPassword"
+                  className={`${styles.inputField} ${styles.inputFieldNoIcon}`}
+                  value={formData.newPassword}
+                  onChange={handleChange}
+                  placeholder="Mínimo 6 caracteres"
+                />
+                <button
+                  type="button"
+                  className={styles.passwordToggle}
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                  aria-label="Alternar visibilidade da nova senha"
+                >
+                  {showNewPassword ? (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                  ) : (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  )}
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
+        {/* ABA: PAGAMENTOS (MOCK) */}
+        {activeTab === 'pagamento' && (
+          <div className={styles.panel}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+              <div>
+                <h2 className={styles.panelTitle}>Métodos de Pagamento</h2>
+                <p className={styles.panelSubtitle} style={{ marginBottom: 0 }}>Gerencie seus cartões salvos para compras com 1 clique (Ambiente Simulado).</p>
+              </div>
+              <button type="button" onClick={addNewCard} className="btn btn-primary" style={{ padding: '0.5rem 1.25rem' }}>
+                + Adicionar Cartão
+              </button>
+            </div>
+
+            <div className={styles.cardsList}>
+              {paymentMocks.map((card, idx) => (
+                <div key={idx} className={styles.creditCard}>
+                  <div className={styles.creditCardTop}>
+                    <div className={styles.cardChip} />
+                    <div className={styles.cardBrand}>ELITE VISA</div>
+                  </div>
+
+                  <div className={styles.cardNumber}>{card.cardNumber}</div>
+
+                  <div className={styles.creditCardBottom}>
+                    <div>
+                      <div className={styles.cardHolderLabel}>Titular</div>
+                      <div className={styles.cardHolderName}>{card.name}</div>
+                    </div>
+
+                    <div style={{ textAlign: 'right' }}>
+                      <div className={styles.cardHolderLabel}>Expira em</div>
+                      <div className={styles.cardExpiry}>{card.expiry}</div>
+                    </div>
+
+                    <div className={styles.cardActions}>
+                      <span className={`${styles.statusBadge} ${card.status === 'approved' ? styles.statusApproved : styles.statusDeclined}`}>
+                        {card.status === 'approved' ? 'Aprovado' : 'Recusado'}
+                      </span>
+                      <button
+                        type="button"
+                        className={styles.removeCardBtn}
+                        onClick={() => setPaymentMocks((prev) => prev.filter((_, i) => i !== idx))}
+                      >
+                        Excluir
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ABA: PREFERÊNCIAS */}
         {activeTab === 'preferencias' && (
-          <div className="glass-panel" style={{ padding: '2rem' }}>
-            <h2>Preferências de Notificação</h2>
-            
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '1.5rem', padding: '1rem', border: '1px solid var(--border-glass)', borderRadius: '8px' }}>
-              <input 
-                type="checkbox" 
-                checked={preferences.newsletter} 
-                onChange={(e) => setPreferences(prev => ({ ...prev, newsletter: e.target.checked }))}
-                style={{ width: '20px', height: '20px', cursor: 'pointer' }}
-              />
-              <div>
-                <div style={{ fontWeight: 'bold' }}>Newsletter e Ofertas</div>
-                <div className="text-secondary" style={{ fontSize: '0.85rem' }}>Receber e-mails com novos filmes e descontos.</div>
-              </div>
-            </div>
+          <div className={styles.panel}>
+            <h2 className={styles.panelTitle}>Preferências de Notificação</h2>
+            <p className={styles.panelSubtitle}>Configure como deseja receber novidades, descontos e alertas de ingressos.</p>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '1rem', padding: '1rem', border: '1px solid var(--border-glass)', borderRadius: '8px' }}>
-              <input 
-                type="checkbox" 
-                checked={preferences.sms} 
-                onChange={(e) => setPreferences(prev => ({ ...prev, sms: e.target.checked }))}
-                style={{ width: '20px', height: '20px', cursor: 'pointer' }}
-              />
-              <div>
-                <div style={{ fontWeight: 'bold' }}>Avisos por SMS</div>
-                <div className="text-secondary" style={{ fontSize: '0.85rem' }}>Receber confirmação de ingresso via SMS.</div>
+            <div className={styles.prefList}>
+              <div className={styles.prefItem}>
+                <div className={styles.prefInfo}>
+                  <div className={styles.prefTitle}>Newsletter e Ofertas Exclusivas</div>
+                  <div className={styles.prefDesc}>Receba e-mails com estreias de filmes, pré-venda de shows e cupons de desconto.</div>
+                </div>
+                <label className={styles.switch}>
+                  <input
+                    type="checkbox"
+                    checked={preferences.newsletter}
+                    onChange={(e) => setPreferences((prev) => ({ ...prev, newsletter: e.target.checked }))}
+                  />
+                  <span className={styles.slider} />
+                </label>
+              </div>
+
+              <div className={styles.prefItem}>
+                <div className={styles.prefInfo}>
+                  <div className={styles.prefTitle}>Confirmações e Alertas via SMS</div>
+                  <div className={styles.prefDesc}>Receba notificações de confirmação de compra e lembretes de sessão no seu celular.</div>
+                </div>
+                <label className={styles.switch}>
+                  <input
+                    type="checkbox"
+                    checked={preferences.sms}
+                    onChange={(e) => setPreferences((prev) => ({ ...prev, sms: e.target.checked }))}
+                  />
+                  <span className={styles.slider} />
+                </label>
               </div>
             </div>
           </div>
         )}
 
-        <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'flex-end' }}>
-          <button className="btn btn-primary" onClick={handleSave} disabled={loading}>
-            {loading ? 'Salvando...' : 'Salvar Alterações'}
+        {/* BARRA DE AÇÕES (SALVAR) */}
+        <div className={styles.saveBar}>
+          <button type="button" className={styles.saveBtn} onClick={handleSave} disabled={loading}>
+            {loading ? (
+              <>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="animate-spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                Salvando...
+              </>
+            ) : (
+              'Salvar Alterações'
+            )}
           </button>
         </div>
-      </div>
+      </main>
     </div>
   );
 }
