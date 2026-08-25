@@ -101,6 +101,7 @@ export default function PortariaPage() {
     setLoading(true);
     setResult(null);
 
+    const cleanCode = code.trim().replace(/^#+/, '');
     const currentEvent = events.find(ev => ev.id === selectedEventId);
     const fallbackEventTitle = currentEvent ? currentEvent.title : 'Evento';
 
@@ -114,7 +115,7 @@ export default function PortariaPage() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}` 
         },
-        body: JSON.stringify({ qrCode: code, eventId: selectedEventId })
+        body: JSON.stringify({ qrCode: cleanCode, eventId: selectedEventId })
       });
       const data = await res.json();
       
@@ -123,12 +124,12 @@ export default function PortariaPage() {
            const seatVal = data.seat || (data.details?.startsWith('Assento:') ? data.details.replace('Assento:', '').trim() : data.details);
            setResult({ 
              status: 'warning', 
-             title: 'Ingresso Já Utilizado', 
-             customerName: data.customerName || 'Cliente',
+             title: 'Check-in Já Realizado', 
+             customerName: data.customerName || 'Titular do Ingresso',
              scannedAt: data.scannedAt,
              seat: seatVal,
              eventTitle: data.eventTitle || fallbackEventTitle,
-             ticketId: data.ticketId || code,
+             ticketId: data.ticketId || cleanCode,
              details: 'Este ingresso já realizou o check-in na portaria. Entrada duplicada proibida.' 
            });
         } else if (data.error && data.error.includes('Evento errado')) {
@@ -151,11 +152,11 @@ export default function PortariaPage() {
         setResult({ 
           status: 'success', 
           title: 'Acesso Liberado!', 
-          customerName: data.customerName || 'Cliente',
+          customerName: data.customerName || 'Titular do Ingresso',
           scannedAt: data.scannedAt || new Date().toISOString(),
           seat: seatVal,
           eventTitle: data.eventTitle || fallbackEventTitle,
-          ticketId: data.ticketId || code,
+          ticketId: data.ticketId || cleanCode,
           details: ''
         });
       }
@@ -392,7 +393,7 @@ export default function PortariaPage() {
                   Cliente / Titular
                 </div>
                 <div style={{ fontSize: '1.25rem', fontWeight: '700', color: 'white', wordBreak: 'break-word' }}>
-                  {result.customerName || 'Cliente'}
+                  {result.customerName || 'Titular do Ingresso'}
                 </div>
               </div>
 
@@ -435,7 +436,7 @@ export default function PortariaPage() {
                 </div>
                 {result.ticketId && (
                   <div style={{ fontSize: '0.75rem', fontFamily: 'monospace', color: 'var(--text-secondary)', marginTop: '0.15rem' }}>
-                    #{result.ticketId.length > 12 ? result.ticketId.substring(0, 10) + '...' : result.ticketId}
+                    #{result.ticketId.replace(/^#+/, '').substring(0, 8).toUpperCase()}
                   </div>
                 )}
               </div>

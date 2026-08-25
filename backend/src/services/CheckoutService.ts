@@ -77,17 +77,21 @@ export class CheckoutService {
     if (!qrCode || !eventId) throw new Error('Faltam dados: qrCode ou eventId');
 
     let searchId: string;
+    let tokenGuestName: string | undefined;
     const secret = process.env.JWT_SECRET || 'fallback-secret-for-dev-only-123';
     
     try {
       const decoded: any = jwt.verify(qrCode, secret);
       searchId = decoded.reservationId;
+      if (decoded.guestName) {
+        tokenGuestName = decoded.guestName;
+      }
     } catch (err) {
       // Se não for um JWT válido, assumimos que é uma digitação manual do ID (completo ou parcial)
       searchId = qrCode;
     }
     
-    searchId = searchId.trim().replace('#', '').toLowerCase();
+    searchId = searchId.trim().replace(/^#+/, '').toLowerCase();
 
     const reservation = await prisma.reservation.findFirst({
       where: { id: { startsWith: searchId } },
@@ -101,12 +105,12 @@ export class CheckoutService {
     if (!reservation) throw new Error(`Inválido: Não encontrado (Buscando: ${searchId})`);
     if (reservation.eventId !== eventId) throw new Error('Evento errado');
     
-    let customerName: string | undefined = reservation.user?.name;
+    let customerName: string | undefined = tokenGuestName || reservation.user?.name;
     if (!customerName && reservation.userId) {
       const u = await prisma.user.findUnique({ where: { id: reservation.userId } });
       customerName = u?.name || u?.email;
     }
-    const finalCustomerName = customerName || 'Cliente';
+    const finalCustomerName = customerName || 'Titular do Ingresso';
     
     const seatInfo = `Fila ${reservation.seat.row} - Num ${reservation.seat.number}`;
     const eventTitle = reservation.event.title;
