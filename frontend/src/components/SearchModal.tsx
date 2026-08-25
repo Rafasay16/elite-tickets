@@ -189,19 +189,6 @@ export default function SearchModal() {
       >
         <SearchIcon />
         <span>Buscar</span>
-        <kbd
-          style={{
-            fontSize: '0.7rem',
-            padding: '0.15rem 0.4rem',
-            background: 'rgba(255, 255, 255, 0.08)',
-            borderRadius: '4px',
-            color: 'var(--text-secondary)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            marginLeft: '0.25rem'
-          }}
-        >
-          Ctrl K
-        </kbd>
       </button>
     );
   }
