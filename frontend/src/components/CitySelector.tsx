@@ -131,7 +131,7 @@ export default function CitySelector({ initialCity }: { initialCity: string }) {
         onClick={() => setShowModal(true)} 
         style={{
           display: 'flex', alignItems: 'center', gap: '0.5rem',
-          background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-glass)',
+          background: 'var(--background-card)', border: '1px solid var(--border-glass)',
           padding: '0.4rem 1rem', borderRadius: '999px', color: 'var(--text-primary)',
           cursor: 'pointer', transition: 'all 0.2s'
         }}
@@ -144,13 +144,13 @@ export default function CitySelector({ initialCity }: { initialCity: string }) {
       {mounted && showModal && createPortal(
         <div style={{
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          background: 'rgba(0,0,0,0.8)', zIndex: 999999,
+          background: 'rgba(0,0,0,0.7)', zIndex: 999999,
           display: 'flex', alignItems: 'center', justifyContent: 'center'
         }}>
-          <div className="glass-panel" style={{ padding: '2rem', width: '90%', maxWidth: '500px', maxHeight: '90vh', overflowY: 'auto' }}>
+          <div className="glass-panel" style={{ padding: '2rem', width: '90%', maxWidth: '500px', maxHeight: '90vh', overflowY: 'auto', background: 'var(--background-dark)', color: 'var(--text-primary)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <h2 style={{ margin: 0 }}>Sua Localização</h2>
-              <button onClick={() => setShowModal(false)} style={{ background: 'transparent', border: 'none', color: 'white', fontSize: '1.5rem', cursor: 'pointer' }}>&times;</button>
+              <h2 style={{ margin: 0, color: 'var(--text-primary)' }}>Sua Localização</h2>
+              <button onClick={() => setShowModal(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', fontSize: '1.5rem', cursor: 'pointer' }}>&times;</button>
             </div>
             
             <p className="text-secondary" style={{ marginBottom: '1.5rem', fontSize: '0.9rem' }}>
@@ -167,7 +167,7 @@ export default function CitySelector({ initialCity }: { initialCity: string }) {
                 alignItems: 'center', 
                 gap: '0.5rem',
                 background: 'var(--accent-neon)',
-                color: '#000',
+                color: '#ffffff',
                 fontWeight: 'bold'
               }} 
               onClick={handleGeolocation}
@@ -178,7 +178,7 @@ export default function CitySelector({ initialCity }: { initialCity: string }) {
 
             <div style={{ textAlign: 'center', margin: '1.5rem 0', color: 'var(--text-secondary)', position: 'relative' }}>
               <hr style={{ borderColor: 'var(--border-glass)' }} />
-              <span style={{ position: 'absolute', top: '-10px', background: 'var(--background-card)', padding: '0 10px', left: '50%', transform: 'translateX(-50%)' }}>ou informe manualmente</span>
+              <span style={{ position: 'absolute', top: '-10px', background: 'var(--background-dark)', color: 'var(--text-secondary)', padding: '0 10px', left: '50%', transform: 'translateX(-50%)' }}>ou informe manualmente</span>
             </div>
             
             <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
@@ -189,8 +189,8 @@ export default function CitySelector({ initialCity }: { initialCity: string }) {
                   onChange={(e) => setSelectedState(e.target.value)}
                   style={{
                     width: '100%', padding: '0.75rem', borderRadius: '8px',
-                    border: '1px solid var(--border-glass)', background: 'rgba(255,255,255,0.05)',
-                    color: 'white'
+                    border: '1px solid var(--border-glass)', background: 'var(--background-card)',
+                    color: 'var(--text-primary)'
                   }}
                 >
                   <option value="" style={{ color: 'black' }}>Selecione o Estado</option>
@@ -208,8 +208,8 @@ export default function CitySelector({ initialCity }: { initialCity: string }) {
                   disabled={!selectedState || cities.length === 0}
                   style={{
                     width: '100%', padding: '0.75rem', borderRadius: '8px',
-                    border: '1px solid var(--border-glass)', background: 'rgba(255,255,255,0.05)',
-                    color: 'white', opacity: (!selectedState || cities.length === 0) ? 0.5 : 1
+                    border: '1px solid var(--border-glass)', background: 'var(--background-card)',
+                    color: 'var(--text-primary)', opacity: (!selectedState || cities.length === 0) ? 0.5 : 1
                   }}
                 >
                   <option value="" style={{ color: 'black' }}>Selecione a Cidade</option>

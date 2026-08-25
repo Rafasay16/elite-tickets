@@ -385,7 +385,7 @@ export default function HeaderClient({ session, photoUrl, currentCity }: HeaderC
                     </div>
                   )}
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: '700', fontSize: '0.95rem', color: 'white', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    <div style={{ fontWeight: '700', fontSize: '0.95rem', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {session.name}
                     </div>
                     <div style={{ fontSize: '0.75rem', color: 'var(--accent-neon)', fontWeight: 700, textTransform: 'uppercase' }}>

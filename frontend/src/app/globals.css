@@ -20,16 +20,16 @@
 }
 
 [data-theme='light'] {
-  --background-dark: #f1f5f9; /* Slate 100 */
-  --background-card: rgba(255, 255, 255, 0.7); 
-  --border-glass: rgba(0, 0, 0, 0.1);
+  --background-dark: #f8fafc; /* Slate 50 */
+  --background-card: #ffffff; 
+  --border-glass: rgba(15, 23, 42, 0.12);
   --text-primary: #0f172a; /* Slate 900 */
   --text-secondary: #475569; /* Slate 600 */
   
-  --accent-neon: #1d4ed8; 
-  --accent-neon-glow: rgba(29, 78, 216, 0.2);
-  --accent-purple: #4338ca;
-  --accent-purple-glow: rgba(67, 56, 202, 0.2);
+  --accent-neon: #2563eb; 
+  --accent-neon-glow: rgba(37, 99, 235, 0.2);
+  --accent-purple: #4f46e5;
+  --accent-purple-glow: rgba(79, 70, 229, 0.2);
   
   color-scheme: light;
 }
