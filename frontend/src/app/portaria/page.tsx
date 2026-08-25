@@ -105,6 +105,21 @@ export default function PortariaPage() {
     const currentEvent = events.find(ev => ev.id === selectedEventId);
     const fallbackEventTitle = currentEvent ? currentEvent.title : 'Evento';
 
+    let qrGuestName: string | undefined;
+    let qrTicketId: string | undefined;
+    try {
+      if (cleanCode.includes('.')) {
+        const parts = cleanCode.split('.');
+        if (parts.length >= 2) {
+          const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+          if (payload) {
+            qrGuestName = payload.customerName || payload.guestName || payload.name || payload.userName;
+            qrTicketId = payload.reservationId || payload.id;
+          }
+        }
+      }
+    } catch (e) {}
+
     try {
       const token = localStorage.getItem('token');
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3333/api';
@@ -119,17 +134,20 @@ export default function PortariaPage() {
       });
       const data = await res.json();
       
+      const resolvedCustomerName = data.customerName || data.guestName || data.name || data.userName || qrGuestName || 'Titular do Ingresso';
+      const resolvedTicketId = data.ticketId || qrTicketId || cleanCode;
+
       if (!res.ok) {
         if (data.error && data.error.includes('JÁ UTILIZADO')) {
            const seatVal = data.seat || (data.details?.startsWith('Assento:') ? data.details.replace('Assento:', '').trim() : data.details);
            setResult({ 
              status: 'warning', 
              title: 'Check-in Já Realizado', 
-             customerName: data.customerName || 'Titular do Ingresso',
+             customerName: resolvedCustomerName,
              scannedAt: data.scannedAt,
              seat: seatVal,
              eventTitle: data.eventTitle || fallbackEventTitle,
-             ticketId: data.ticketId || cleanCode,
+             ticketId: resolvedTicketId,
              details: 'Este ingresso já realizou o check-in na portaria. Entrada duplicada proibida.' 
            });
         } else if (data.error && data.error.includes('Evento errado')) {
@@ -152,11 +170,11 @@ export default function PortariaPage() {
         setResult({ 
           status: 'success', 
           title: 'Acesso Liberado!', 
-          customerName: data.customerName || 'Titular do Ingresso',
+          customerName: resolvedCustomerName,
           scannedAt: data.scannedAt || new Date().toISOString(),
           seat: seatVal,
           eventTitle: data.eventTitle || fallbackEventTitle,
-          ticketId: data.ticketId || cleanCode,
+          ticketId: resolvedTicketId,
           details: ''
         });
       }

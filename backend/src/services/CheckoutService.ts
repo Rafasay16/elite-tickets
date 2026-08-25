@@ -34,14 +34,18 @@ export class CheckoutService {
 
   static async confirm(data: any, userId: string) {
     const { reservationId } = data;
-    const reservation = await prisma.reservation.findUnique({ where: { id: reservationId } });
+    const reservation = await prisma.reservation.findUnique({ 
+      where: { id: reservationId },
+      include: { user: true }
+    });
     
     if (!reservation || reservation.userId !== userId) {
       throw new Error('Reserva não encontrada');
     }
     if (reservation.status === 'PAID') throw new Error('Já pago');
 
-    const payload = { reservationId, userId, timestamp: Date.now() };
+    const customerName = reservation.user?.name || undefined;
+    const payload = { reservationId, userId, customerName, guestName: customerName, timestamp: Date.now() };
     const secret = process.env.JWT_SECRET || 'fallback-secret-for-dev-only-123';
     const qrData = jwt.sign(payload, secret);
     const qrCodeUrl = await QRCode.toDataURL(qrData);
@@ -82,20 +86,34 @@ export class CheckoutService {
     
     try {
       const decoded: any = jwt.verify(qrCode, secret);
-      searchId = decoded.reservationId;
-      if (decoded.guestName) {
-        tokenGuestName = decoded.guestName;
+      searchId = decoded.reservationId || decoded.id;
+      if (decoded.guestName || decoded.customerName || decoded.name || decoded.userName) {
+        tokenGuestName = decoded.guestName || decoded.customerName || decoded.name || decoded.userName;
       }
     } catch (err) {
-      // Se não for um JWT válido, assumimos que é uma digitação manual do ID (completo ou parcial)
-      searchId = qrCode;
+      try {
+        const decoded: any = jwt.decode(qrCode);
+        if (decoded && (decoded.reservationId || decoded.id)) {
+          searchId = decoded.reservationId || decoded.id;
+          if (decoded.guestName || decoded.customerName || decoded.name || decoded.userName) {
+            tokenGuestName = decoded.guestName || decoded.customerName || decoded.name || decoded.userName;
+          }
+        } else {
+          searchId = qrCode;
+        }
+      } catch {
+        searchId = qrCode;
+      }
     }
     
     searchId = searchId.trim().replace(/^#+/, '').toLowerCase();
 
     const reservation = await prisma.reservation.findFirst({
       where: { 
-        id: { startsWith: searchId, mode: 'insensitive' } 
+        OR: [
+          { id: { startsWith: searchId, mode: 'insensitive' } },
+          { id: { equals: searchId, mode: 'insensitive' } }
+        ]
       },
       include: {
         seat: true,

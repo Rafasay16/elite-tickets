@@ -137,7 +137,16 @@ async function main() {
       password: await bcrypt.hash('123456', 10),
       role: 'CLIENT'
     }
-  })
+  });
+
+  const cliente2 = await prisma.user.create({
+    data: {
+      name: 'Rafael Cliente',
+      email: 'rafael@gmail.com',
+      password: await bcrypt.hash('123456', 10),
+      role: 'CLIENT'
+    }
+  });
 
   const rawMovies = await fetchMovies();
   const movies = rawMovies.filter((m: any) => !m.title.toLowerCase().includes('hotel desire'));
