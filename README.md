@@ -155,7 +155,8 @@ npm run dev
 
 | Papel | E-mail | Senha | Area de Acesso |
 |---|---|---|---|
-| Cliente | rafael@gmail.com | 123456 | Catalogo, Reserva, Meus Ingressos, Perfil |
+| Cliente | rafinha@gmail.com | 123456 | Catalogo, Reserva, Meus Ingressos, Perfil |
+| Cliente | reuel@gmail.com | 123456 | Catalogo, Reserva, Meus Ingressos, Perfil |
 | Organizador | admin@admin.com | 123456 | Painel do Organizador (/admin), Portaria |
 | Portaria | portaria@elite.com | 123456 | HUD Scanner da Portaria (/portaria) |
 | Super Admin | superadmin@elite.com | 123456 | Governanca Global (/super-admin) |
