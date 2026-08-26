@@ -4,7 +4,7 @@ import { getImageUrl } from "@/lib/tmdb";
 import SeatMap from "@/components/SeatMap";
 import SectorSelection from "@/components/SectorSelection";
 import { notFound } from "next/navigation";
-import { CalendarIcon, MapPinIcon } from "@/components/Icons";
+import { CalendarIcon, MapPinIcon, SpeakerIcon, ArmchairIcon, ClimateIcon, WheelchairIcon } from "@/components/Icons";
 import SessionPicker from "@/components/SessionPicker";
 import RatingBadge from "@/components/RatingBadge";
 import styles from "./page.module.css";
@@ -111,10 +111,10 @@ export default async function EventoPage({ params }: { params: { id: string } })
 
             {/* Perks / Amenities Chips */}
             <div className={styles.perksList}>
-              <span className={styles.perkChip}>🔊 Som Espacial Dolby Atmos</span>
-              <span className={styles.perkChip}>💺 Poltronas Reclináveis</span>
-              <span className={styles.perkChip}>❄️ Ambiente Climatizado</span>
-              <span className={styles.perkChip}>♿ Acessibilidade PCD</span>
+              <span className={styles.perkChip}><SpeakerIcon /> Som Espacial Dolby Atmos</span>
+              <span className={styles.perkChip}><ArmchairIcon /> Poltronas Reclináveis</span>
+              <span className={styles.perkChip}><ClimateIcon /> Ambiente Climatizado</span>
+              <span className={styles.perkChip}><WheelchairIcon /> Acessibilidade PCD</span>
             </div>
           </div>
         </div>

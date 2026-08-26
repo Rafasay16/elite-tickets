@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { CalendarIcon, MapPinIcon, TicketIcon } from '@/components/Icons';
+import { CalendarIcon, MapPinIcon, TicketIcon, FlameIcon, BoltIcon } from '@/components/Icons';
 import ShareButton from '@/components/ShareButton';
 import { getImageUrl } from '@/lib/tmdb';
 import { CheckoutService } from '@/services/CheckoutService';
@@ -80,10 +80,10 @@ export default function MeusIngressosClient({
       return <span className={`${styles.timingBadge} ${styles.timingPast}`}>Encerrado</span>;
     }
     if (diffDays <= 0 || (evtDate.getDate() === now.getDate() && evtDate.getMonth() === now.getMonth())) {
-      return <span className={`${styles.timingBadge} ${styles.timingToday}`}>🔥 É Hoje!</span>;
+      return <span className={`${styles.timingBadge} ${styles.timingToday}`}><FlameIcon /> É Hoje!</span>;
     }
     if (diffDays === 1) {
-      return <span className={`${styles.timingBadge} ${styles.timingToday}`}>⚡ Amanhã</span>;
+      return <span className={`${styles.timingBadge} ${styles.timingToday}`}><BoltIcon /> Amanhã</span>;
     }
     return <span className={`${styles.timingBadge} ${styles.timingUpcoming}`}>Em {diffDays} dias</span>;
   };
