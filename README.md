@@ -181,7 +181,3 @@ Caso encontre algum comportamento inesperado durante a execucao ou teste:
    ```
 
 ---
-
-## 8. Licenca
-
-Este projeto esta sob a licenca MIT.
