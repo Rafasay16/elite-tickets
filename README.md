@@ -11,31 +11,38 @@ Uma plataforma full-stack de bilhetagem de eventos, reserva interativa de assent
 
 ## 1. Processo de Engenharia: Uso de Ferramentas de IA e Contribuicao Humana
 
-Em conformidade com as diretrizes do projeto, esta secao detalha as ferramentas de Inteligencia Artificial utilizadas, onde foram aplicadas e o que foi concebido e implementado diretamente de forma manual.
+Em conformidade com as diretrizes do projeto, esta secao detalha a distribuicao entre o uso assistido de ferramentas de Inteligencia Artificial e a atuacao direta do desenvolvedor na arquitetura, modelagem de dados, organizacao estrutural e tomadas de decisao tecnica.
 
 ### Ferramentas de IA Utilizadas
 
 - **Claude Code (Opus):**
-  - Utilizado na estruturacao da arquitetura full-stack inicial, geracao de contratos de rotas REST, schemas de validacao com Zod, modelagem do Prisma Schema e implementacao das transacoes atomicas de reserva para prevencao de condicoes de corrida (race conditions) no banco de dados.
+  - Utilizado como acelerador de codigo para scaffolding de rotas REST, prototipagem inicial de schemas de validacao Zod, mapeamento base de tipos TypeScript e geracao de esqueletos para operacoes CRUD.
 - **Gemini 3.7 Flash (High Thinking / Raciocinio Avancado):**
-  - Utilizado na otimizacao de performance, refatoracao de regras de sessao e sincronizacao de cookies de autenticacao, algoritmo de agrupamento de sessoes por data, logica de busca instantanea com normalizacao de texto (remocao de acentos) e resolucao de problemas especificos de renderizacao mobile (como o encapsulamento do menu gaveta via React Portal para compatibilidade com o motor WebKit do iOS Safari).
+  - Utilizado na analise de gargalos de performance, refatoracao de regras de sessao e sincronizacao de cookies de autenticacao, algoritmo de agrupamento de sessoes de cinema por data, logica de busca instantanea com normalizacao de texto (remocao de acentos) e auxilio no diagnostico de bugs de renderizacao do motor WebKit no iOS Safari.
 - **Impeccable (Suite de Auditoria e Critica Heuristica de Frontend):**
-  - Utilizado como ferramenta de apoio para auditoria de usabilidade, contraste de cores, hierarquia tipografica, responsividade em dispositivos moveis (smartphones e tablets de 320px a 768px), estados vazios, consistencia dos tokens do design system e eliminacao de quebras de layout na alternancia entre temas claro e escuro.
+  - Utilizado como ferramenta de apoio e checklist de design para auditoria visual de contraste, ritmos espaciais, ergonomia de toque em telas menores (320px a 768px), estados vazios (empty states) e consistencia na transicao entre temas claro e escuro.
 
-### O Que Foi Desenvolvido e Decidido SEM IA (Trabalho Humano e Iniciativa)
+### O Que Foi Concebido, Arquitetado e Implementado Manualmente (Trabalho Humano e Engenharia)
 
-- **Concepcao do Modelo de Negocio e Regras da Plataforma:**
-  - Definicao de uma solucao integrada para entretenimento regional que atende tanto cinemas de salas numeradas quanto shows e festivais de lotes abertos.
-- **Definicao da Arquitetura RBAC (Controle de Acesso em 4 Niveis):**
-  - Planejamento rigoroso das permissoes dos papeis CLIENT, ORGANIZER, PORTARIA e SUPER_ADMIN, garantindo isolamento total de rotas e dados sensiveis.
-- **Selecao da Stack Tecnologica e Infraestrutura:**
-  - Escolha estrategica de Next.js 14 App Router, TypeScript estrito, CSS Modules com Glassmorphism, Prisma ORM, PostgreSQL hospedado no Supabase, Vercel e Render.
-- **Validacao Manual em Dispositivos Fisicos Reais:**
-  - Testes manuais continuos em smartphones (iPhone e Android) para validacao de toque, ergonomia do mapa de assentos e funcionamento do scanner de camera na portaria.
-- **Concepcao das Funcionalidades de Criatividade e Valor Agregado:**
-  - Decisao humana de incluir sintetizador sonoro Web Audio API na portaria, compartilhamento direto via WhatsApp Web Share API, busca por CEP via ViaCEP, geolocalizacao oficial do IBGE e botao de ampliacao de QR Code para ambientes de alta luminosidade.
-- **Curadoria dos Dados de Teste:**
-  - Montagem e estruturacao das sessoes de filmes sincronizadas com dados do TMDB, criacao dos organizadores modelo e mapeamento de assentos por setor.
+- **Arquitetura de Software e Organizacao Modular de Diretorios:**
+  - Planejamento e estruturacao completa do monorepo separando estritamente as responsabilidades do frontend e backend:
+    - **Backend em Camadas:** Divisao rigorosa em Controllers (recebimento e resposta HTTP), Services (regras de negocio puras), Middlewares (autenticacao e RBAC), Schemas (validacao de payload) e Database (Prisma ORM e migracoes).
+    - **Frontend Desacoplado (Next.js 14 App Router):** Separacao entre Server Components (para busca de dados no servidor e otimizacao de SEO) e Client Components (`*Client.tsx` para interatividade), isolando servicos de API (`src/services/`), utilitarios de formatacao e mascaras (`src/utils/`), e componentes atomicos reutilizaveis (`src/components/`).
+- **Modelagem Relacional de Banco de Dados e Consistencia Transacional:**
+  - Desenho do modelo de dados relacional no PostgreSQL (Entidades: User, Event, Seat, Reservation, AuditLog).
+  - Criacao manual de constraints de unicidade (`@@unique([eventId, row, number])`) e chaves estrangeiras com regras de delecao em cascata, garantindo integridade referencial no banco de dados e impedindo venda duplicada de poltronas (*double-booking*) em cenarios de alta concorrencia.
+- **Seguranca, Autenticacao e Governanca RBAC em 4 Niveis:**
+  - Concepcao e implementacao do fluxo de autenticacao hibrida com cookies seguros HTTP-only para Server-Side Rendering (SSR) e tokens JWT Bearer nas requisicoes de API.
+  - Modelagem do sistema de autorizacao por papeis (`CLIENT`, `ORGANIZER`, `PORTARIA`, `SUPER_ADMIN`), assegurando que produtores nao acessem eventos concorrentes e que operadores de portaria tenham acesso exclusivo e seguro ao HUD de leitura.
+  - Implementacao de politicas de hashing criptografico com Argon2/Bcrypt e higienizacao de dados sensiveis (remocao de senhas e dados confidenciais antes do envio das respostas HTTP).
+- **Design System Tokenizado e Arquitetura CSS Proprietaria:**
+  - Desenvolvimento manual de um design system proprietario via CSS Modules e variaveis CSS puras (`globals.css`), sem dependencia de frameworks utilitarios inflados (como Tailwind). A arquitetura foi concebida para suportar Glassmorphism, degradês calculados e troca instantanea entre Dark Mode e Light Mode atraves de atributos semanticos (`[data-theme='light']`).
+- **Estrategia de Infraestrutura, Deploy e CI/CD:**
+  - Escolha e configuracao dos ambientes de hospedagem: Vercel para o frontend em arquitetura Edge/Serverless, Render para o servico de API Express em container Node.js, e Supabase para o cluster gerenciado de PostgreSQL com connection pooling.
+- **Depuracao em Dispositivos Fisicos Reais:**
+  - Testes manuais e depuracao em smartphones fisicos (iPhone/Safari e Android/Chrome), identificando comportamentos especificos de motores de renderizacao movel, como o problema de corte de elementos fixos dentro de containers com `backdrop-filter` no WebKit do iOS Safari, solucionado com a implementacao de `createPortal`.
+- **Concepcao Criativa das Funcionalidades de Valor Agregado:**
+  - Idealizacao humana de todas as funcionalidades de produto comercial: feedback auditivo sintetizado na portaria via Web Audio API, compartilhamento inteligente por WhatsApp Web Share API, busca automatica de enderecos por CEP (ViaCEP), integracao de geolocalizacao com dados oficiais do IBGE e gerador de senhas seguras com copia rapida.
 
 ---
 
