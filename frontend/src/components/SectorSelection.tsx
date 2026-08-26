@@ -21,7 +21,7 @@ type SectorSelectionProps = {
 };
 
 export default function SectorSelection({ seats, eventId, basePrice, maxTickets, feeRate }: SectorSelectionProps) {
-  const [loading, setLoading] = useState(false);
+  const [loadingSector, setLoadingSector] = useState<string | null>(null);
   const router = useRouter();
 
   // Agrupa os assentos por setor
@@ -51,52 +51,68 @@ export default function SectorSelection({ seats, eventId, basePrice, maxTickets,
       return;
     }
 
-    // Pega o primeiro ingresso disponível do lote
     const seatToReserve = availableSeats[0];
+    setLoadingSector(sectorName);
 
-    setLoading(true);
     try {
       const reservation = await CheckoutService.reserve(eventId, seatToReserve.id);
-      
-      // Direciona para a página de pagamento com o ID da reserva
       router.push(`/pagamento/${reservation.id}`);
     } catch (err: any) {
       alert(`Erro ao reservar: ${err.message}`);
-      setLoading(false);
+      setLoadingSector(null);
     }
   };
 
   return (
     <div className={styles.container}>
       {Object.entries(sectors).map(([sectorName, data]) => {
-        const isCamarote = sectorName.toUpperCase() === 'CAMAROTE';
+        const isCamarote = sectorName.toUpperCase().includes('CAMAROTE') || sectorName.toUpperCase().includes('VIP');
         const price = isCamarote ? basePrice * 2 : basePrice;
         const serviceFee = price * feeRate;
+        const total = price + serviceFee;
         const isSoldOut = data.available.length === 0;
+        const isLoading = loadingSector === sectorName;
 
         return (
-          <div key={sectorName} className={`${styles.sectorCard} ${isCamarote ? styles.vip : ''} ${isSoldOut ? styles.soldOut : ''}`}>
-            <div className={styles.sectorInfo}>
-              <h3>Lote {sectorName} {isCamarote && '⭐'}</h3>
+          <div 
+            key={sectorName} 
+            className={`${styles.sectorCard} ${isCamarote ? styles.vip : ''} ${isSoldOut ? styles.soldOut : ''}`}
+          >
+            <div>
+              <div className={styles.sectorHeader}>
+                <h3 className={styles.sectorTitle}>
+                  Setor {sectorName}
+                </h3>
+                {isCamarote && (
+                  <span className={styles.vipBadge}>Área Nobre VIP</span>
+                )}
+              </div>
               <p className={styles.availability}>
-                {isSoldOut ? 'Esgotado' : `Permitido até ${maxTickets} ingressos por pessoa`}
+                {isSoldOut ? (
+                  <span style={{ color: '#ef4444', fontWeight: 700 }}>● Esgotado</span>
+                ) : (
+                  <span>✓ Disponível • Permitido até {maxTickets} ingressos por CPF</span>
+                )}
               </p>
             </div>
             
             <div className={styles.actionArea}>
-              <div className={styles.price}>
-                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(price)}
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>
-                  <span>Taxa de Serviço ({Math.round(feeRate * 100)}%)</span>
-                  <span>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(serviceFee)}</span>
+              <div className={styles.priceBlock}>
+                <div className={styles.priceValue}>
+                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(total)}
                 </div>
+                <span className={styles.feeText}>
+                  Ingresso {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(price)} + Taxa ({Math.round(feeRate * 100)}%)
+                </span>
               </div>
+
               <button 
-                className={`btn btn-primary ${loading || isSoldOut ? 'btn-disabled' : ''}`}
+                className={`btn btn-primary ${isLoading || isSoldOut ? 'btn-disabled' : ''}`}
                 onClick={() => handleCheckout(sectorName)}
-                disabled={loading || isSoldOut}
+                disabled={isLoading || isSoldOut}
+                style={{ padding: '0.75rem 1.85rem', fontWeight: 800 }}
               >
-                {loading ? 'Processando...' : (isSoldOut ? 'Esgotado' : 'Comprar')}
+                {isLoading ? 'Processando...' : (isSoldOut ? 'Esgotado' : 'Comprar Ingresso →')}
               </button>
             </div>
           </div>

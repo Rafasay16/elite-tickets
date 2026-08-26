@@ -19,7 +19,7 @@ export default async function EventoPage({ params }: { params: { id: string } })
     return (
       <main className="container" style={{ padding: '4rem 1.5rem', textAlign: 'center' }}>
         <h2>Evento não encontrado.</h2>
-        <Link href="/" className="btn btn-secondary" style={{ marginTop: '1rem' }}>Voltar</Link>
+        <Link href="/" className="btn btn-secondary" style={{ marginTop: '1rem' }}>Voltar para o Início</Link>
       </main>
     );
   }
@@ -63,6 +63,13 @@ export default async function EventoPage({ params }: { params: { id: string } })
       </div>
 
       <div className={`container ${styles.contentContainer}`}>
+        
+        {/* Botão de Voltar */}
+        <Link href="/" className={styles.backLink}>
+          <span>←</span>
+          <span>Voltar para Todos os Eventos</span>
+        </Link>
+
         <div className={styles.header}>
           <div className={styles.posterWrapper}>
             <Image
@@ -72,25 +79,43 @@ export default async function EventoPage({ params }: { params: { id: string } })
               className={styles.poster}
             />
           </div>
+          
           <div className={styles.info}>
-            <span className="btn" style={{ background: 'var(--accent-neon)', color: '#fff', padding: '0.2rem 1rem', borderRadius: '999px', display: 'inline-block', marginBottom: '1rem', fontSize: '0.8rem', fontWeight: 'bold'}}>
+            <span className={styles.typeBadge}>
               {isShow ? 'Show / Festival' : 'Cinema Premium'}
             </span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
-              <h1 className="neon-text" style={{ margin: 0 }}>{event.title}</h1>
+            
+            <div className={styles.titleRow}>
+              <h1 className={styles.title}>{event.title}</h1>
               <RatingBadge rating={event.rating} />
             </div>
+
             <div className={styles.meta}>
-              <span><CalendarIcon /> {new Date(event.date).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
-              <span><MapPinIcon /> {event.location}</span>
+              <span className={styles.metaItem}>
+                <CalendarIcon />
+                <span>{new Date(event.date).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+              </span>
+              <span className={styles.metaItem}>
+                <MapPinIcon />
+                <span>{event.location}</span>
+              </span>
               <span className={styles.price}>
                 {isShow ? 'A partir de ' : ''}
                 {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(event.price)}
               </span>
             </div>
+
             <p className={styles.description}>
-               {event.description || (isShow ? 'Garanta seu lote antes que esgote. Escolha o setor abaixo.' : 'Viva esta experiência de cinema premium. Selecione seu assento abaixo e prepare a pipoca.')}
+              {event.description || (isShow ? 'Garanta seu lote oficial antes que esgote. Escolha o setor e área desejada abaixo.' : 'Viva esta experiência de cinema premium com som imersivo e imagem de alta fidelidade. Selecione sua poltrona abaixo.')}
             </p>
+
+            {/* Perks / Amenities Chips */}
+            <div className={styles.perksList}>
+              <span className={styles.perkChip}>🔊 Som Espacial Dolby Atmos</span>
+              <span className={styles.perkChip}>💺 Poltronas Reclináveis</span>
+              <span className={styles.perkChip}>❄️ Ambiente Climatizado</span>
+              <span className={styles.perkChip}>♿ Acessibilidade PCD</span>
+            </div>
           </div>
         </div>
 
@@ -100,8 +125,8 @@ export default async function EventoPage({ params }: { params: { id: string } })
             <SessionPicker sessions={sessions} currentSessionId={event.id} />
           )}
 
-          <h2>{isShow ? 'Selecione seu Setor' : 'Selecione seu Assento'}</h2>
-          <div className="glass-panel" style={{ padding: '2rem' }}>
+          <h2 className={styles.bookingTitle}>{isShow ? 'Selecione seu Setor / Lote' : 'Selecione sua Poltrona'}</h2>
+          <div className="glass-panel" style={{ padding: '2.5rem 2rem', background: 'var(--background-card)' }}>
             {isShow ? (
               <SectorSelection seats={event.seats} eventId={event.id} basePrice={event.price} maxTickets={event.maxTicketsPerUser} feeRate={event.organizer.feeRate} />
             ) : (
