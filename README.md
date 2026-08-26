@@ -1,101 +1,108 @@
 # Elite Tickets
 
-A full-stack event ticketing and digital access management platform featuring real-time QR Code validation, interactive seat reservations, administrative business intelligence, and a modern glassmorphism interface.
+Uma plataforma full-stack de bilhetagem de eventos, reserva interativa de assentos e controle de acesso digital com validacao de ingressos via QR Code em tempo real, paineis administrativos de inteligencia de negocios e interface moderna.
 
-## Live Demonstrations
-- Frontend Platform: [https://elite-tickets-vlr.vercel.app/](https://elite-tickets-vlr.vercel.app/)
-- Backend API Services: [https://elite-tickets-api-uiqi.onrender.com](https://elite-tickets-api-uiqi.onrender.com)
+## Demonstracao Online em Producao
 
-## Engineering and Development Process
+- Plataforma Frontend: https://elite-tickets-vlr.vercel.app/
+- API Backend: https://elite-tickets-api-uiqi.onrender.com
 
-This platform was architected and developed utilizing advanced artificial intelligence engineering workflows and frontend critique tools:
+---
 
-- **AI Engineering Models:** Developed and refined using Claude Code (Opus) and Gemini 3.7 Flash (High Thinking / Reasoning) for full-stack architecture, transactional reservation algorithms, RBAC security rules, and performance optimizations.
-- **Frontend Auditing and UX Polish (Impeccable):** Frontend interfaces and user journeys across the catalog, checkout, client wallet, organizer panel, portaria scanner, and super-admin dashboards were systematically reviewed, audited, and polished using the Impeccable design and heuristic critique suite.
+## 1. Processo de Engenharia: Uso de Ferramentas de IA e Contribuicao Humana
 
-## Technology Stack
+Em conformidade com as diretrizes do projeto, esta secao detalha as ferramentas de Inteligencia Artificial utilizadas, onde foram aplicadas e o que foi concebido e implementado diretamente de forma manual.
 
-- **Frontend Subsystem:**
-  - Framework: Next.js 14 (App Router)
-  - Language: TypeScript
-  - Styling: Vanilla CSS Modules with a custom tokenized Glassmorphism design system
-  - Icons: Custom Vector SVG Icons
-  - Image Optimization: Next.js Image Component with remote pattern integration (TMDB, DiceBear)
-  - Audio Feedback: HTML5 Web Audio API Synthesizer (oscillator-based portaria scanning sounds)
+### Ferramentas de IA Utilizadas
 
-- **Backend Subsystem:**
-  - Runtime: Node.js
-  - Framework: Express
-  - Language: TypeScript
-  - ORM: Prisma
-  - Database: PostgreSQL (Supabase)
-  - Authentication: JWT (JSON Web Tokens) with Argon2/Bcrypt password hashing and HTTP-only cookies
+- **Claude Code (Opus):**
+  - Utilizado na estruturacao da arquitetura full-stack inicial, geracao de contratos de rotas REST, schemas de validacao com Zod, modelagem do Prisma Schema e implementacao das transacoes atomicas de reserva para prevencao de condicoes de corrida (race conditions) no banco de dados.
+- **Gemini 3.7 Flash (High Thinking / Raciocinio Avancado):**
+  - Utilizado na otimizacao de performance, refatoracao de regras de sessao e sincronizacao de cookies de autenticacao, algoritmo de agrupamento de sessoes por data, logica de busca instantanea com normalizacao de texto (remocao de acentos) e resolucao de problemas especificos de renderizacao mobile (como o encapsulamento do menu gaveta via React Portal para compatibilidade com o motor WebKit do iOS Safari).
+- **Impeccable (Suite de Auditoria e Critica Heuristica de Frontend):**
+  - Utilizado como ferramenta de apoio para auditoria de usabilidade, contraste de cores, hierarquia tipografica, responsividade em dispositivos moveis (smartphones e tablets de 320px a 768px), estados vazios, consistencia dos tokens do design system e eliminacao de quebras de layout na alternancia entre temas claro e escuro.
 
-- **Infrastructure and Hosting:**
-  - Frontend: Vercel
-  - Backend: Render
-  - Database: Supabase
+### O Que Foi Desenvolvido e Decidido SEM IA (Trabalho Humano e Iniciativa)
 
-## Architecture Overview
+- **Concepcao do Modelo de Negocio e Regras da Plataforma:**
+  - Definicao de uma solucao integrada para entretenimento regional que atende tanto cinemas de salas numeradas quanto shows e festivais de lotes abertos.
+- **Definicao da Arquitetura RBAC (Controle de Acesso em 4 Niveis):**
+  - Planejamento rigoroso das permissoes dos papeis CLIENT, ORGANIZER, PORTARIA e SUPER_ADMIN, garantindo isolamento total de rotas e dados sensiveis.
+- **Selecao da Stack Tecnologica e Infraestrutura:**
+  - Escolha estrategica de Next.js 14 App Router, TypeScript estrito, CSS Modules com Glassmorphism, Prisma ORM, PostgreSQL hospedado no Supabase, Vercel e Render.
+- **Validacao Manual em Dispositivos Fisicos Reais:**
+  - Testes manuais continuos em smartphones (iPhone e Android) para validacao de toque, ergonomia do mapa de assentos e funcionamento do scanner de camera na portaria.
+- **Concepcao das Funcionalidades de Criatividade e Valor Agregado:**
+  - Decisao humana de incluir sintetizador sonoro Web Audio API na portaria, compartilhamento direto via WhatsApp Web Share API, busca por CEP via ViaCEP, geolocalizacao oficial do IBGE e botao de ampliacao de QR Code para ambientes de alta luminosidade.
+- **Curadoria dos Dados de Teste:**
+  - Montagem e estruturacao das sessoes de filmes sincronizadas com dados do TMDB, criacao dos organizadores modelo e mapeamento de assentos por setor.
 
-Elite Tickets provides an end-to-end ticketing ecosystem designed for regional festivals, concerts, theaters, and cinemas in Brazil. The system operates as a monorepo with decoupled frontend and backend services to ensure separation of concerns, high throughput, and seamless maintainability.
+---
 
-### Key Capabilities
+## 2. Iniciativas e Diferenciais de Criatividade (Alem do Escopo Basico)
 
-1. **Interactive Event Discovery and Faceted Search:**
-   - Real-time instant query search across event titles and venues.
-   - Category facet filters (Shows, Cinema, Teatro, E-sports, Outros).
-   - Date range filters (Hoje, Fim de Semana, Este Mês, Seletor de Calendário).
-   - Starting price indicators and high-impact hero carousel with pause-on-hover controls.
+Abaixo estao as funcionalidades implementadas por iniciativa propria para tornar a plataforma um produto de nivel comercial:
 
-2. **Visual Seat Selection and ACID Reservations:**
-   - Dynamic SVG-based interactive seat grids with row and column mapping.
-   - Real-time seat status tracking (Available, Reserved, Occupied, VIP Courtesy).
-   - Atomic checkout reservation prevents double-booking race conditions.
+1. **Sintetizador Sonoro Nativo na Portaria (Web Audio API):**
+   - Em vez de depender apenas de alertas visuais, a tela da portaria conta com sintetizador de frequencias sonoras que emite um acorde harmonico em caso de ingresso valido e um sinal sonoro dissonante para ingressos duplicados ou invalidos, acelerando o fluxo de filas.
+2. **QR Code Integrado no Canhoto do Ingresso com Modal de Ampliacao:**
+   - O QR Code fica diretamente visivel no corpo do ingresso digital, eliminando cliques extras na entrada do evento. Inclui botao de ampliacao em tela cheia para leitura facil em condicoes de luz solar ou telas riscadas.
+3. **Geolocalizacao Automatica e Integracao com a API do IBGE:**
+   - O usuario pode identificar sua localizacao via GPS (Reverse Geocoding) ou selecionar seu estado e municipio por meio da base oficial do IBGE, filtrando eventos da sua regiao.
+4. **Preenchimento Automatico de Endereco por CEP (ViaCEP):**
+   - No painel administrativo do organizador, a digitacao do CEP do local preenche automaticamente os campos de logradouro, bairro, cidade e estado.
+5. **Governanca de Super Administrador com Geracao Segura de Senhas:**
+   - O Super Admin pode parametrizar taxas de conveniencia individualizadas por produtor, limitar cotas de publicacao de eventos e gerar senhas temporarias com botao de copia imediata para a area de transferencia.
+6. **Alternador de Tema Claro e Escuro (Dark e Light Mode):**
+   - Suporte completo a alternancia de tema com persistencia no navegador e tokens semanticos que garantem legibilidade e contraste em todas as telas.
+7. **Menu Mobile Adaptativo via React Portal:**
+   - Desenvolvido especificamente para evitar o problema classico do Safari/WebKit em que elementos fixos ficam cortados dentro de headers com efeito de desfoque (backdrop-filter).
 
-3. **Digital Ticket Wallet (Meus Ingressos):**
-   - Authentic boarding pass stub aesthetics with perforation details.
-   - Instant high-contrast QR code display directly in ticket cards for fast entrance validation.
-   - One-click QR code zoom modal for high-glare lighting environments.
-   - Timing badges with automated countdowns (Hoje, Amanhã, Em X dias, Encerrado).
-   - Tabbed view separating active upcoming tickets from archived past event passes.
-   - Native WhatsApp and clipboard link sharing via Web Share API.
+---
 
-4. **Dedicated Gatekeeper Scanner (Portaria HUD):**
-   - High-performance camera-based QR code scanning with auto-dismiss verification overlays.
-   - Web Audio API dual-tone audio feedback (positive harmonic chime for valid tickets, dissonant error buzz for duplicates or expired passes).
-   - Manual ticket ID input fallback for damaged camera lenses or scratched screens.
-   - Real-time recent scans audit feed.
+## 3. Tecnologias Utilizadas
 
-5. **Organizer Administration Dashboard (admin@admin.com):**
-   - Executive KPI summary cards (Total Events, Active Events, Total Capacity, Paused Events).
-   - ViaCEP integration for automatic street, neighborhood, and city population from postal codes.
-   - VIP courtesy ticket issuance with direct seat allocation.
-   - Gatekeeper team management with access revocation, credential resets, and scan logs.
+### Frontend
+- Framework: Next.js 14 (App Router)
+- Linguagem: TypeScript
+- Estilizacao: CSS Modules com variaveis e tokens semanticos
+- Icones: Icones vetoriais SVG customizados
+- Otimizacao de Imagens: Componente Image do Next.js integrado ao TMDB e DiceBear
+- Recursos Web: Web Audio API, Web Share API, Geolocation API, HTML5 Canvas QR
 
-6. **Super Administrator Governance Panel (superadmin@elite.com):**
-   - Platform-wide governance KPI cards (Total Organizers, Active Partners, Average Platform Fee, Suspended Accounts).
-   - Commercial parameterization (custom service fee percentage and event publishing quota per producer).
-   - Automated temporary password generation with one-click clipboard copy.
+### Backend
+- Ambiente de Execucao: Node.js
+- Framework: Express
+- Linguagem: TypeScript
+- ORM: Prisma
+- Banco de Dados: PostgreSQL (Supabase)
+- Autenticacao: JWT (JSON Web Tokens) com hash de senhas via Argon2/Bcrypt e cookies HTTP-only
 
-## Access Control and RBAC Roles
+### Infraestrutura e Hospedagem
+- Frontend: Vercel
+- Backend: Render
+- Banco de Dados: Supabase
 
-The system enforces strict Role-Based Access Control:
+---
 
-- **CLIENT:** Browses catalog, selects seats, executes mock checkout, manages profile and view ticket wallet.
-- **ORGANIZER:** Manages event catalog, releases VIP courtesies, pauses/publishes events, and configures gatekeeper staff.
-- **PORTARIA:** Dedicated single-purpose scanning interface for rapid entry gate verification.
-- **SUPER_ADMIN:** Master platform governance over producer accounts, service fees, and account suspensions.
+## 4. Estrutura de Papeis e Permissoes (RBAC)
 
-## Local Setup and Installation
+- **CLIENT:** Acessa o catalogo de eventos, realiza busca e filtros, seleciona assentos, efetua reservas, visualiza e compartilha ingressos na carteira digital e edita seu perfil.
+- **ORGANIZER:** Cria e gerencia eventos, acompanha indicadores (total de eventos, capacidade e ingressos vendidos), emite cortesias VIP e cadastra equipes de portaria.
+- **PORTARIA:** Interface simplificada e segura para leitura de ingressos via camera ou digitacao manual, com feedback sonoro e auditoria de entradas em tempo real.
+- **SUPER_ADMIN:** Painel de governanca global da plataforma, permitindo cadastrar produtores, definir taxas de servico customizadas, pausar contas e redefinir credenciais.
 
-### Prerequisites
-- Node.js Runtime (v18.0.0 or higher)
-- npm or yarn package manager
+---
 
-### Installation Steps
+## 5. Instrucoes de Instalacao e Execucao Local
 
-1. Clone the repository and install root and package dependencies:
+### Pre-requisitos
+- Node.js (versao 18.0.0 ou superior)
+- Gerenciador de pacotes npm
+
+### Passo a Passo
+
+1. Clonar o repositorio e instalar as dependencias:
 ```bash
 git clone https://github.com/Rafasay16/elite-tickets.git
 cd elite-tickets
@@ -103,22 +110,22 @@ npm install
 npm run install:all
 ```
 
-2. Configure Environment Variables:
+2. Configurar as variaveis de ambiente:
 
-Backend environment (`backend/.env`):
+Arquivo `backend/.env`:
 ```env
 PORT=3333
-DATABASE_URL="postgresql://user:password@host:port/database"
-DIRECT_URL="postgresql://user:password@host:port/database"
-JWT_SECRET="your_secure_jwt_secret_key"
+DATABASE_URL="postgresql://usuario:senha@host:porta/banco?pgbouncer=true"
+DIRECT_URL="postgresql://usuario:senha@host:porta/banco"
+JWT_SECRET="chave_secreta_jwt_de_desenvolvimento"
 ```
 
-Frontend environment (`frontend/.env` or `frontend/.env.local`):
+Arquivo `frontend/.env.local`:
 ```env
 NEXT_PUBLIC_API_URL="http://localhost:3333/api"
 ```
 
-3. Initialize the Database:
+3. Inicializar e popular o banco de dados:
 ```bash
 cd backend
 npx prisma generate
@@ -127,33 +134,46 @@ npx tsx prisma/seed.ts
 cd ..
 ```
 
-4. Launch Local Development Servers:
+4. Executar os servidores de desenvolvimento simultaneamente:
 ```bash
 npm run dev
 ```
 
-The frontend application will be accessible at `http://localhost:3000` and the backend API at `http://localhost:3333`.
+- A aplicacao web estara acessivel em: `http://localhost:3000`
+- A API backend estara acessivel em: `http://localhost:3333`
 
-## Test Credentials for Development
+---
 
-- **Client Accounts:**
-  - Email: `rafinha@gmail.com` | Password: `123456`
-  - Email: `reuel@gmail.com` | Password: `123456`
-- **Organizer Account:**
-  - Email: `admin@admin.com` | Password: `123456`
-- **Gatekeeper Account (Portaria):**
-  - Email: `portaria@elite.com` | Password: `123456`
-- **Super Administrator Account:**
-  - Email: `superadmin@elite.com` | Password: `123456`
+## 6. Credenciais de Teste para Validacao
 
-## Production Build Verification
+| Papel | E-mail | Senha | Area de Acesso |
+|---|---|---|---|
+| Cliente | rafael@gmail.com | 123456 | Catalogo, Reserva, Meus Ingressos, Perfil |
+| Organizador | admin@admin.com | 123456 | Painel do Organizador (/admin), Portaria |
+| Portaria | portaria@elite.com | 123456 | HUD Scanner da Portaria (/portaria) |
+| Super Admin | superadmin@elite.com | 123456 | Governanca Global (/super-admin) |
 
-To build and validate the production bundles across all packages:
-```bash
-npm run build --prefix frontend
-npm run build --prefix backend
-```
+---
 
-## License
+## 7. Informacoes de Suporte e Solucao de Problemas (Troubleshooting)
 
-This project is distributed under the MIT License.
+Caso encontre algum comportamento inesperado durante a execucao ou teste:
+
+1. **Tempo de Resposta na Primeira Requisicao da API (Cold Start no Render):**
+   - O backend em producao esta hospedado no tier gratuito do Render. Caso fique inativo por alguns minutos, o primeiro carregamento de dados pode levar cerca de 30 a 50 segundos para inicializar a instancia. Apos o primeiro acesso, as respostas ocorrem normalmente em milissegundos.
+2. **Permissao de Camera no Scanner da Portaria:**
+   - Os navegadores modernos exigem conexao segura (HTTPS ou localhost) para conceder acesso a camera. Ao testar o leitor da portaria em dispositivos moveis, certifique-se de autorizar a permissao de camera quando solicitada pelo navegador. Caso a camera nao esteja disponivel, a aba de **Digitacao Manual** permite validar ingressos digitando o identificador do ticket.
+3. **Troca de Tema e Armazenamento Local:**
+   - A preferencia de tema claro/escuro e persistida no `localStorage`. Caso a alternancia pareca nao responder ao trocar de navegador, limpe o cache de dados do site ou abra em modo anonimo.
+4. **Validacao de Build de Producao:**
+   - Ambos os pacotes foram validados com compilacao de producao sem erros de tipagem TypeScript:
+   ```bash
+   npm run build --prefix frontend
+   npm run build --prefix backend
+   ```
+
+---
+
+## 8. Licenca
+
+Este projeto esta sob a licenca MIT.
