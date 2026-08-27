@@ -1,10 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_123';
+import { config } from '../config';
+import { JwtAuthPayload } from '../types';
 
 export interface AuthRequest extends Request {
-  user?: any;
+  user?: JwtAuthPayload;
 }
 
 export function authMiddleware(req: AuthRequest, res: Response, next: NextFunction) {
@@ -16,7 +16,7 @@ export function authMiddleware(req: AuthRequest, res: Response, next: NextFuncti
   const [, token] = authHeader.split(' ');
 
   try {
-    const payload = jwt.verify(token as string, JWT_SECRET);
+    const payload = jwt.verify(token as string, config.jwtAuthSecret) as JwtAuthPayload;
     req.user = payload;
     next();
   } catch (err) {

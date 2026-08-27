@@ -5,7 +5,7 @@ import { CheckoutService } from '../services/CheckoutService';
 export class CheckoutController {
   static async reserve(req: AuthRequest, res: Response) {
     try {
-      const reservation = await CheckoutService.reserve(req.body, req.user.id);
+      const reservation = await CheckoutService.reserve(req.body, req.user!.id);
       return res.json({ success: true, reservation });
     } catch (error: any) {
       if (error.message === 'Faltam dados') {
@@ -20,7 +20,7 @@ export class CheckoutController {
 
   static async confirm(req: AuthRequest, res: Response) {
     try {
-      await CheckoutService.confirm(req.body, req.user.id);
+      await CheckoutService.confirm(req.body, req.user!.id);
       return res.json({ success: true });
     } catch (error: any) {
       if (error.message === 'Reserva não encontrada') {
@@ -32,7 +32,7 @@ export class CheckoutController {
 
   static async getSharedTicket(req: AuthRequest, res: Response) {
     try {
-      const ticket = await CheckoutService.getSharedTicket(req.params.id as string, req.user.id);
+      const ticket = await CheckoutService.getSharedTicket(req.params.id as string, req.user!.id);
       return res.json({ success: true, ticket });
     } catch (error: any) {
       return res.status(404).json({ error: error.message });
@@ -41,7 +41,7 @@ export class CheckoutController {
 
   static async validateTicket(req: AuthRequest, res: Response) {
     try {
-      const result = await CheckoutService.validateTicket(req.body, req.user.id);
+      const result = await CheckoutService.validateTicket(req.body, req.user!.id);
       return res.json({ success: true, ...result });
     } catch (error: any) {
       if (error.message && error.message.startsWith('Inválido')) {

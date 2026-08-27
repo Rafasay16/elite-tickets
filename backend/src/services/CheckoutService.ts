@@ -1,42 +1,47 @@
 import prisma from '../models/prisma';
 import QRCode from 'qrcode';
 import jwt from 'jsonwebtoken';
+import { config } from '../config';
+import { ReserveInput, ConfirmInput, ValidateTicketInput } from '../types';
 
 export class CheckoutService {
-  static async reserve(data: any, userId: string) {
+  static async reserve(data: ReserveInput, userId: string) {
     const { eventId, seatId } = data;
     if (!eventId || !seatId) throw new Error('Faltam dados');
 
-    const event = await prisma.event.findUnique({ where: { id: eventId } });
-    if (!event) throw new Error('Evento não existe');
+    return prisma.$transaction(async (tx) => {
+      const event = await tx.event.findUnique({ where: { id: eventId } });
+      if (!event) throw new Error('Evento não existe');
 
-    const count = await prisma.reservation.count({
-      where: { eventId, userId, status: { in: ['RESERVED', 'PAID'] } }
+      const count = await tx.reservation.count({
+        where: { eventId, userId, status: { in: ['RESERVED', 'PAID'] } }
+      });
+      if (count >= event.maxTicketsPerUser) {
+        throw new Error(`Limite de ${event.maxTicketsPerUser} ingressos atingido.`);
+      }
+
+      // UPDATE atômico condicional: só muda se status = AVAILABLE
+      // Se dois requests chegam ao mesmo tempo, o segundo recebe count=0 e falha
+      const result = await tx.seat.updateMany({
+        where: { id: seatId, status: 'AVAILABLE' },
+        data: { status: 'RESERVED' }
+      });
+      if (result.count === 0) throw new Error('Assento indisponível');
+
+      const expiresAt = new Date(Date.now() + 10 * 60_000); // 10 min
+
+      const reservation = await tx.reservation.create({
+        data: { userId, eventId, seatId, status: 'RESERVED', expiresAt }
+      });
+
+      return reservation;
     });
-    if (count >= event.maxTicketsPerUser) {
-      throw new Error(`Limite de ${event.maxTicketsPerUser} ingressos atingido.`);
-    }
-
-    const seat = await prisma.seat.findUnique({ where: { id: seatId } });
-    if (!seat || seat.status !== 'AVAILABLE') throw new Error('Assento indisponível');
-
-    await prisma.seat.update({ where: { id: seatId }, data: { status: 'RESERVED' } });
-
-    const expiresAt = new Date();
-    expiresAt.setMinutes(expiresAt.getMinutes() + 10); // 10 min
-
-    const reservation = await prisma.reservation.create({
-      data: { userId, eventId, seatId, status: 'RESERVED', expiresAt }
-    });
-
-    return reservation;
   }
 
-  static async confirm(data: any, userId: string) {
+  static async confirm(data: ConfirmInput, userId: string) {
     const { reservationId } = data;
     const reservation = await prisma.reservation.findUnique({ 
       where: { id: reservationId },
-      include: { user: true }
     });
     
     if (!reservation || reservation.userId !== userId) {
@@ -44,15 +49,21 @@ export class CheckoutService {
     }
     if (reservation.status === 'PAID') throw new Error('Já pago');
 
-    const customerName = reservation.user?.name || undefined;
-    const payload = { reservationId, userId, customerName, guestName: customerName, timestamp: Date.now() };
-    const secret = process.env.JWT_SECRET || 'fallback-secret-for-dev-only-123';
+    // Payload opaco: sem dados pessoais (customerName/guestName removidos)
+    // Nome do titular é resolvido no servidor via reservationId
+    const payload = { reservationId, timestamp: Date.now() };
+    const secret = config.jwtTicketSecret;
     const qrData = jwt.sign(payload, secret);
     const qrCodeUrl = await QRCode.toDataURL(qrData);
 
     await prisma.reservation.update({
       where: { id: reservationId },
-      data: { status: 'PAID', qrCodeUrl, expiresAt: null }
+      data: { status: 'PAID', expiresAt: null }
+    });
+
+    // QR armazenado na tabela Ticket separada (não mais em Reservation)
+    await prisma.ticket.create({
+      data: { reservationId, qrCodeData: qrData }
     });
 
     await prisma.seat.update({
@@ -66,7 +77,7 @@ export class CheckoutService {
   static async getSharedTicket(id: string, userId: string) {
     const reservation = await prisma.reservation.findUnique({
       where: { id },
-      include: { seat: true, event: true, user: { select: { name: true, email: true } } }
+      include: { seat: true, event: true, user: { select: { name: true, email: true } }, ticket: true }
     });
 
     if (!reservation) throw new Error('Ingresso não encontrado');
@@ -76,45 +87,28 @@ export class CheckoutService {
     return reservation;
   }
 
-  static async validateTicket(data: any, userId: string) {
+  static async validateTicket(data: ValidateTicketInput, userId: string) {
     const { qrCode, eventId } = data;
     if (!qrCode || !eventId) throw new Error('Faltam dados: qrCode ou eventId');
 
-    let searchId: string;
-    let tokenGuestName: string | undefined;
-    const secret = process.env.JWT_SECRET || 'fallback-secret-for-dev-only-123';
-    
-    try {
-      const decoded: any = jwt.verify(qrCode, secret);
-      searchId = decoded.reservationId || decoded.id;
-      if (decoded.guestName || decoded.customerName || decoded.name || decoded.userName) {
-        tokenGuestName = decoded.guestName || decoded.customerName || decoded.name || decoded.userName;
-      }
-    } catch (err) {
-      try {
-        const decoded: any = jwt.decode(qrCode);
-        if (decoded && (decoded.reservationId || decoded.id)) {
-          searchId = decoded.reservationId || decoded.id;
-          if (decoded.guestName || decoded.customerName || decoded.name || decoded.userName) {
-            tokenGuestName = decoded.guestName || decoded.customerName || decoded.name || decoded.userName;
-          }
-        } else {
-          searchId = qrCode;
-        }
-      } catch {
-        searchId = qrCode;
-      }
-    }
-    
-    searchId = searchId.trim().replace(/^#+/, '').toLowerCase();
+    const secret = config.jwtTicketSecret;
 
-    const reservation = await prisma.reservation.findFirst({
-      where: { 
-        OR: [
-          { id: { startsWith: searchId, mode: 'insensitive' } },
-          { id: { equals: searchId, mode: 'insensitive' } }
-        ]
-      },
+    // jwt.verify OBRIGATÓRIO — sem fallback para jwt.decode ou busca por QR cru
+    let decoded: any;
+    try {
+      decoded = jwt.verify(qrCode, secret);
+    } catch (err) {
+      throw new Error('QR Code inválido ou adulterado');
+    }
+
+    const reservationId: string | undefined = decoded.reservationId;
+    if (!reservationId) {
+      throw new Error('QR Code inválido: identificador ausente');
+    }
+
+    // Busca por igualdade exata — sem startsWith, sem mode insensitive
+    const reservation = await prisma.reservation.findUnique({
+      where: { id: reservationId },
       include: {
         seat: true,
         event: true,
@@ -122,15 +116,11 @@ export class CheckoutService {
       }
     });
 
-    if (!reservation) throw new Error(`Inválido: Não encontrado (Buscando: ${searchId})`);
+    if (!reservation) throw new Error('Inválido: Ingresso não encontrado');
     if (reservation.eventId !== eventId) throw new Error('Evento errado');
-    
-    let customerName: string | undefined = tokenGuestName?.trim() || reservation.user?.name?.trim();
-    if (!customerName && reservation.userId) {
-      const u = await prisma.user.findUnique({ where: { id: reservation.userId } });
-      customerName = u?.name?.trim() || u?.email?.trim();
-    }
-    const finalCustomerName = customerName || 'Titular do Ingresso';
+
+    // Nome do titular resolvido sempre pelo banco — nunca pelo payload do JWT
+    const customerName = reservation.user?.name?.trim() || reservation.user?.email?.trim() || 'Titular do Ingresso';
     
     const seatInfo = `Fila ${reservation.seat.row} - Num ${reservation.seat.number}`;
     const eventTitle = reservation.event.title;
@@ -138,7 +128,7 @@ export class CheckoutService {
     if (reservation.status === 'USED') {
       const err: any = new Error('JÁ UTILIZADO');
       err.data = {
-        customerName: finalCustomerName,
+        customerName,
         scannedAt: reservation.scannedAt,
         seat: seatInfo,
         eventTitle,
@@ -158,14 +148,27 @@ export class CheckoutService {
       } catch {}
     }
 
-    await prisma.reservation.update({
-      where: { id: reservation.id },
+    // Check-in atômico: só marca USED se status ainda for PAID
+    // Se dois scanners tentam ao mesmo tempo, o segundo recebe count=0
+    const updated = await prisma.reservation.updateMany({
+      where: { id: reservation.id, status: 'PAID' },
       data: { status: 'USED', scannedAt, scannedById: validScannedById }
     });
+    if (updated.count === 0) {
+      const err: any = new Error('JÁ UTILIZADO');
+      err.data = {
+        customerName,
+        scannedAt: reservation.scannedAt,
+        seat: seatInfo,
+        eventTitle,
+        ticketId: reservation.id
+      };
+      throw err;
+    }
 
     return {
       message: 'Acesso Liberado!',
-      customerName: finalCustomerName,
+      customerName,
       scannedAt,
       seat: seatInfo,
       eventTitle,

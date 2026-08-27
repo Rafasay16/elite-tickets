@@ -29,12 +29,16 @@ Em conformidade com as diretrizes do projeto, esta secao detalha a distribuicao 
     - **Backend em Camadas:** Divisao rigorosa em Controllers (recebimento e resposta HTTP), Services (regras de negocio puras), Middlewares (autenticacao e RBAC), Schemas (validacao de payload) e Database (Prisma ORM e migracoes).
     - **Frontend Desacoplado (Next.js 14 App Router):** Separacao entre Server Components (para busca de dados no servidor e otimizacao de SEO) e Client Components (`*Client.tsx` para interatividade), isolando servicos de API (`src/services/`), utilitarios de formatacao e mascaras (`src/utils/`), e componentes atomicos reutilizaveis (`src/components/`).
 - **Modelagem Relacional de Banco de Dados e Consistencia Transacional:**
-  - Desenho do modelo de dados relacional no PostgreSQL (Entidades: User, Event, Seat, Reservation, AuditLog).
-  - Criacao manual de constraints de unicidade (`@@unique([eventId, row, number])`) e chaves estrangeiras com regras de delecao em cascata, garantindo integridade referencial no banco de dados e impedindo venda duplicada de poltronas (*double-booking*) em cenarios de alta concorrencia.
-- **Seguranca, Autenticacao e Governanca RBAC em 4 Niveis:**
-  - Concepcao e implementacao do fluxo de autenticacao hibrida com cookies seguros HTTP-only para Server-Side Rendering (SSR) e tokens JWT Bearer nas requisicoes de API.
+  - Desenho do modelo de dados relacional no PostgreSQL (Entidades: User, Event, Seat, Reservation, Ticket, PaymentMethod).
+  - Preços monetários modelados com precisão inteira em centavos (`priceInCents Int`), eliminando problemas de arredondamento de Float.
+  - Tabela dedicada `Ticket` para dados criptográficos de validação, desacoplada da entidade `Reservation`.
+  - Transações atômicas com locks condicionais (`prisma.$transaction` e `updateMany` condicional `WHERE status = 'AVAILABLE'` e `WHERE status = 'PAID'`), garantindo matematicamente no banco a impossibilidade de venda duplicada (*double-booking*) e validação duplicada (*double-scan*) em cenários de alta concorrência.
+- **Segurança, Autenticacao e Governanca RBAC em 4 Niveis:**
+  - Segregação estrita de segredos criptográficos com inicialização *Fail-Fast* (`JWT_AUTH_SECRET` para sessões e `JWT_TICKET_SECRET` para assinatura de QR Codes; o servidor recusa o boot caso as variáveis estejam ausentes).
+  - Assinatura criptográfica HMAC não-forjável com verificação obrigatória (`jwt.verify`), sem fallbacks inseguros ou busca por prefixo (busca estrita por igualdade exata de ID).
+  - Proteção de dados pessoais (LGPD/Privacy by Design): payload do QR Code é 100% opaco e não trafega dados pessoais (`customerName`/`guestName`), sendo os dados do titular resolvidos exclusivamente no servidor após a verificação criptográfica.
   - Modelagem do sistema de autorizacao por papeis (`CLIENT`, `ORGANIZER`, `PORTARIA`, `SUPER_ADMIN`), assegurando que produtores nao acessem eventos concorrentes e que operadores de portaria tenham acesso exclusivo e seguro ao HUD de leitura.
-  - Implementacao de politicas de hashing criptografico com Argon2/Bcrypt e higienizacao de dados sensiveis (remocao de senhas e dados confidenciais antes do envio das respostas HTTP).
+  - Implementacao de politicas de hashing criptografico com Bcrypt (salt 10) e higienizacao de dados sensiveis (remocao de senhas antes do envio das respostas HTTP).
 - **Design System Tokenizado e Arquitetura CSS Proprietaria:**
   - Desenvolvimento manual de um design system proprietario via CSS Modules e variaveis CSS puras (`globals.css`), sem dependencia de frameworks utilitarios inflados (como Tailwind). A arquitetura foi concebida para suportar Glassmorphism, degradês calculados e troca instantanea entre Dark Mode e Light Mode atraves de atributos semanticos (`[data-theme='light']`).
 - **Estrategia de Infraestrutura, Deploy e CI/CD:**
@@ -71,7 +75,7 @@ Abaixo estao as funcionalidades implementadas por iniciativa propria para tornar
 
 ### Frontend
 - Framework: Next.js 14 (App Router)
-- Linguagem: TypeScript
+- Linguagem: TypeScript (Strict Typechecking)
 - Estilizacao: CSS Modules com variaveis e tokens semanticos
 - Icones: Icones vetoriais SVG customizados
 - Otimizacao de Imagens: Componente Image do Next.js integrado ao TMDB e DiceBear
@@ -80,10 +84,11 @@ Abaixo estao as funcionalidades implementadas por iniciativa propria para tornar
 ### Backend
 - Ambiente de Execucao: Node.js
 - Framework: Express
-- Linguagem: TypeScript
+- Linguagem: TypeScript (Tipagem estrita, interfaces de domínio dedicadas, sem `any`)
 - ORM: Prisma
 - Banco de Dados: PostgreSQL (Supabase)
-- Autenticacao: JWT (JSON Web Tokens) com hash de senhas via Argon2/Bcrypt e cookies HTTP-only
+- Criptografia e Autenticação: JWT com fail-fast e segregação de chaves, Bcrypt (salt 10)
+- Testes Automatizados: Vitest (com suítes de concorrência, segurança de ingressos e autenticação)
 
 ### Infraestrutura e Hospedagem
 - Frontend: Vercel
@@ -101,7 +106,7 @@ Abaixo estao as funcionalidades implementadas por iniciativa propria para tornar
 
 ---
 
-## 5. Instrucoes de Instalacao e Execucao Local
+## 5. Instrucoes de Instalacao, Execucao Local e Testes
 
 ### Pre-requisitos
 - Node.js (versao 18.0.0 ou superior)
@@ -124,7 +129,10 @@ Arquivo `backend/.env`:
 PORT=3333
 DATABASE_URL="postgresql://usuario:senha@host:porta/banco?pgbouncer=true"
 DIRECT_URL="postgresql://usuario:senha@host:porta/banco"
-JWT_SECRET="chave_secreta_jwt_de_desenvolvimento"
+JWT_AUTH_SECRET="chave_secreta_para_tokens_de_sessao"
+JWT_TICKET_SECRET="chave_secreta_para_assinatura_de_ingressos_qr"
+TMDB_API_KEY="chave_opcional_tmdb"
+TICKETMASTER_API_KEY="chave_opcional_ticketmaster"
 ```
 
 Arquivo `frontend/.env.local`:
@@ -137,11 +145,18 @@ NEXT_PUBLIC_API_URL="http://localhost:3333/api"
 cd backend
 npx prisma generate
 npx prisma db push
-npx tsx prisma/seed.ts
+npx tsx scripts/seed.ts
 cd ..
 ```
 
-4. Executar os servidores de desenvolvimento simultaneamente:
+4. Executar os testes automatizados (Backend):
+```bash
+cd backend
+npm test
+cd ..
+```
+
+5. Executar os servidores de desenvolvimento simultaneamente:
 ```bash
 npm run dev
 ```
@@ -151,7 +166,25 @@ npm run dev
 
 ---
 
-## 6. Credenciais de Teste para Validacao
+## 6. Cobertura de Testes Automatizados (Vitest)
+
+O backend conta com suítes de testes automatizados cobrindo os fluxos críticos de negócio:
+
+1. **`tests/concurrency.test.ts`**:
+   - **Garantia Anti-Double-Booking**: Dispara 3 requisições simultâneas para o mesmo assento via `Promise.allSettled`; valida que exatamente 1 tem sucesso e as demais falham com conflito.
+   - **Garantia Anti-Double-Scan**: Dispara leituras simultâneas do mesmo QR Code; valida que apenas a primeira é liberada e a segunda é rejeitada com `JÁ UTILIZADO`.
+2. **`tests/ticket_security.test.ts`**:
+   - **Payload Opaco sem PII**: Inspeciona o JWT do QR Code para garantir ausência de dados pessoais (`customerName`/`guestName`).
+   - **Rejeição de QR Adulterado/Forjado**: Validação obrigatória de assinatura via `jwt.verify()`.
+   - **Impedimento de Ataque por Prefixo**: Rejeita identificadores UUID crus ou incompletos.
+   - **Resolução Segura no Servidor**: Validação de ingresso legítimo e resolução de dados no banco.
+3. **`tests/auth.test.ts`**:
+   - **Segregação de Segredos**: Prova que tokens de autenticação não podem validar ingressos e vice-versa.
+   - **Fluxo de Registro e Login**: Verificação de senhas com hash Bcrypt e geração de JWT.
+
+---
+
+## 7. Credenciais de Teste para Validacao
 
 | Papel | E-mail | Senha | Area de Acesso |
 |---|---|---|---|
@@ -163,7 +196,7 @@ npm run dev
 
 ---
 
-## 7. Informacoes de Suporte e Solucao de Problemas (Troubleshooting)
+## 8. Informacoes de Suporte e Solucao de Problemas (Troubleshooting)
 
 Caso encontre algum comportamento inesperado durante a execucao ou teste:
 
@@ -179,5 +212,3 @@ Caso encontre algum comportamento inesperado durante a execucao ou teste:
    npm run build --prefix frontend
    npm run build --prefix backend
    ```
-
----

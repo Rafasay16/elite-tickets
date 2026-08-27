@@ -1,11 +1,11 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import prisma from '../models/prisma';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_123';
+import { config } from '../config';
+import { LoginInput, RegisterInput } from '../types';
 
 export class AuthService {
-  static async login(data: any) {
+  static async login(data: LoginInput) {
     const { email, password } = data;
     if (!email || !password) throw new Error('Email e senha são obrigatórios');
 
@@ -19,12 +19,12 @@ export class AuthService {
       throw new Error('Conta de organizador inativa.');
     }
 
-    const token = jwt.sign({ id: user.id, email: user.email, role: user.role, name: user.name, city: user.city }, JWT_SECRET, { expiresIn: '8h' });
+    const token = jwt.sign({ id: user.id, email: user.email, role: user.role, name: user.name, city: user.city }, config.jwtAuthSecret, { expiresIn: '8h' });
 
     return { token, role: user.role, city: user.city };
   }
 
-  static async register(data: any) {
+  static async register(data: RegisterInput) {
     const { name, email, password, city } = data;
     if (!name || !email || !password || !city) throw new Error('Dados incompletos');
 
@@ -36,7 +36,7 @@ export class AuthService {
       data: { name, email, password: hashedPassword, role: 'CLIENT', city }
     });
 
-    const token = jwt.sign({ id: user.id, email: user.email, role: user.role, name: user.name, city: user.city }, JWT_SECRET, { expiresIn: '8h' });
+    const token = jwt.sign({ id: user.id, email: user.email, role: user.role, name: user.name, city: user.city }, config.jwtAuthSecret, { expiresIn: '8h' });
 
     return { token, role: user.role, city: user.city };
   }

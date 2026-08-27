@@ -1,11 +1,12 @@
 import prisma from '../models/prisma';
 import bcrypt from 'bcryptjs';
+import { UpdateProfileInput, CreatePorteiroInput } from '../types';
 
 export class UserService {
   static async getMyTickets(userId: string) {
     const reservations = await prisma.reservation.findMany({
       where: { userId, status: 'PAID' },
-      include: { event: true, seat: true },
+      include: { event: true, seat: true, ticket: true },
       orderBy: { createdAt: 'desc' }
     });
     return reservations;
@@ -38,21 +39,19 @@ export class UserService {
     return userWithoutPassword;
   }
 
-  static async updateProfile(data: any, userId: string) {
-    const { name, email, city, phone, photoUrl, preferences, paymentMock, currentPassword, newPassword } = data;
+  static async updateProfile(data: UpdateProfileInput, userId: string) {
+    const { name, email, city, phone, photoUrl, preferences, currentPassword, newPassword } = data;
     const user = await prisma.user.findUnique({ where: { id: userId } });
 
     if (!user) throw new Error('Usuário não encontrado');
 
-    let updateData: any = {
-      name,
-      email,
-      city,
-      phone,
-      photoUrl,
-      preferences,
-      paymentMock,
-    };
+    const updateData: Record<string, string> = {};
+    if (name !== undefined) updateData.name = name;
+    if (email !== undefined) updateData.email = email;
+    if (city !== undefined) updateData.city = city;
+    if (phone !== undefined) updateData.phone = phone;
+    if (photoUrl !== undefined) updateData.photoUrl = photoUrl;
+    if (preferences !== undefined) updateData.preferences = preferences;
 
     if (currentPassword && newPassword) {
       if (!user.password) {
@@ -73,7 +72,7 @@ export class UserService {
     return userWithoutPassword;
   }
 
-  static async createPorteiro(data: any, creatorId: string) {
+  static async createPorteiro(data: CreatePorteiroInput, creatorId: string) {
     const { name, email, password } = data;
     
     if (!name || !email || !password) {

@@ -2,10 +2,13 @@ import prisma from '../models/prisma';
 import QRCode from 'qrcode';
 import jwt from 'jsonwebtoken';
 import { TMDBService } from './TMDBService';
+import { config } from '../config';
+import { CreateEventInput, UpdateEventInput, IssueCortesiaInput } from '../types';
+import { Prisma } from '@prisma/client';
 
 export class EventService {
   static async listAll(city?: string, search?: string) {
-    const whereClause: any = { status: 'PUBLISHED' };
+    const whereClause: Prisma.EventWhereInput = { status: 'PUBLISHED' };
     if (city && city !== 'Todo o Brasil' && city !== 'Todas') {
       whereClause.city = city as string;
     }
@@ -42,7 +45,7 @@ export class EventService {
     return events;
   }
 
-  static async create(data: any, organizerId: string) {
+  static async create(data: CreateEventInput, organizerId: string) {
     const organizador = await prisma.user.findUnique({
       where: { id: organizerId },
       include: { events: true }
@@ -63,32 +66,33 @@ export class EventService {
 
     const event = await prisma.event.create({
       data: {
-        externalId: data.externalId,
+        externalId: data.externalId ?? null,
         title: data.title,
-        description: data.description,
-        category: data.category,
-        posterUrl: data.posterUrl,
-        backdropUrl: data.backdropUrl,
+        description: data.description ?? null,
+        category: data.category ?? null,
+        posterUrl: data.posterUrl ?? null,
+        backdropUrl: data.backdropUrl ?? null,
         date: new Date(data.date),
         location: data.location,
         city: data.city || 'São Paulo',
-        price: parseFloat(data.price),
-        capacity: parseInt(data.capacity),
-        maxTicketsPerUser: parseInt(data.maxTicketsPerUser),
+        priceInCents: Math.round(parseFloat(String(data.price)) * 100),
+        capacity: Number(data.capacity),
+        maxTicketsPerUser: Number(data.maxTicketsPerUser),
         organizerId: organizador.id,
         rating
       }
     });
 
     const rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
-    const seatsPerRow = Math.ceil(data.capacity / rows.length);
+    const capacityNum = Number(data.capacity);
+    const seatsPerRow = Math.ceil(capacityNum / rows.length);
     let created = 0;
     
     let seatsData = [];
 
     for (const row of rows) {
       for (let i = 1; i <= seatsPerRow; i++) {
-        if (created >= data.capacity) break;
+        if (created >= capacityNum) break;
         seatsData.push({
           eventId: event.id,
           row,
@@ -97,7 +101,7 @@ export class EventService {
         });
         created++;
       }
-      if (created >= data.capacity) break;
+      if (created >= capacityNum) break;
     }
 
     // Insert in chunks of 5000 to avoid database parameter limits
@@ -110,7 +114,7 @@ export class EventService {
     return event;
   }
 
-  static async updateStatus(id: string, data: any, organizerId: string) {
+  static async updateStatus(id: string, data: UpdateEventInput, organizerId: string) {
     const { status, title, description, category, date, location, price } = data;
 
     const existingEvent = await prisma.event.findUnique({ where: { id } });
@@ -118,14 +122,14 @@ export class EventService {
       throw new Error('Evento não encontrado ou acesso negado');
     }
 
-    const updatedData: any = {};
+    const updatedData: Prisma.EventUpdateInput = {};
     if (status) updatedData.status = status;
     if (title) updatedData.title = title;
     if (description !== undefined) updatedData.description = description;
     if (category) updatedData.category = category;
     if (date) updatedData.date = new Date(date);
     if (location) updatedData.location = location;
-    if (price !== undefined) updatedData.price = parseFloat(price);
+    if (price !== undefined) updatedData.priceInCents = Math.round(parseFloat(String(price)) * 100);
 
     const updatedEvent = await prisma.event.update({
       where: { id },
@@ -144,39 +148,48 @@ export class EventService {
     return seats;
   }
 
-  static async issueCortesia(data: any, organizerId: string) {
+  static async issueCortesia(data: IssueCortesiaInput, organizerId: string) {
     const { eventId, seatId, guestName, guestEmail } = data;
     if (!eventId || !seatId) throw new Error('Evento e Assento são obrigatórios');
 
-    const event = await prisma.event.findUnique({ where: { id: eventId } });
-    if (!event || event.organizerId !== organizerId) {
-      throw new Error('Evento não encontrado ou acesso negado');
-    }
-
-    const seat = await prisma.seat.findUnique({ where: { id: seatId } });
-    if (!seat || seat.status !== 'AVAILABLE') throw new Error('Assento indisponível');
-
-    await prisma.seat.update({ where: { id: seatId }, data: { status: 'CORTESIA' } });
-
-    const reservation = await prisma.reservation.create({
-      data: {
-        userId: organizerId, // Assuming organizer generates it
-        eventId,
-        seatId,
-        status: 'PAID'
+    return prisma.$transaction(async (tx) => {
+      const event = await tx.event.findUnique({ where: { id: eventId } });
+      if (!event || event.organizerId !== organizerId) {
+        throw new Error('Evento não encontrado ou acesso negado');
       }
+
+      // UPDATE atômico condicional: só muda se status = AVAILABLE
+      const result = await tx.seat.updateMany({
+        where: { id: seatId, status: 'AVAILABLE' },
+        data: { status: 'CORTESIA' }
+      });
+      if (result.count === 0) throw new Error('Assento indisponível');
+
+      const reservation = await tx.reservation.create({
+        data: {
+          userId: organizerId,
+          eventId,
+          seatId,
+          status: 'PAID'
+        }
+      });
+
+      const payload = { reservationId: reservation.id, eventId, seatId, cortesia: true, timestamp: Date.now() };
+      const secret = config.jwtTicketSecret;
+      const qrData = jwt.sign(payload, secret);
+      const qrCodeUrl = await QRCode.toDataURL(qrData);
+
+      // QR armazenado na tabela Ticket separada
+      await tx.ticket.create({
+        data: { reservationId: reservation.id, qrCodeData: qrData }
+      });
+
+      const updatedReservation = await tx.reservation.findUnique({
+        where: { id: reservation.id },
+        include: { ticket: true }
+      });
+
+      return updatedReservation;
     });
-
-    const payload = { reservationId: reservation.id, eventId, seatId, guestName, cortesia: true, timestamp: Date.now() };
-    const secret = process.env.JWT_SECRET || 'fallback-secret-for-dev-only-123';
-    const qrData = jwt.sign(payload, secret);
-    const qrCodeUrl = await QRCode.toDataURL(qrData);
-
-    const updatedReservation = await prisma.reservation.update({
-      where: { id: reservation.id },
-      data: { qrCodeUrl }
-    });
-
-    return updatedReservation;
   }
 }

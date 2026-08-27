@@ -15,7 +15,7 @@ model User {
   cpf          String?       @unique // CPF para convidados/compradores e obrigatório para organizadores
   cnpj         String?       @unique // CNPJ para organizadores (opcional)
   responsavel  String? // Nome do responsável pela produtora
-  password     String? // Senha para autenticação (nova funcionalidade)
+  password     String? // Senha para autenticação
   city         String? // Cidade do cliente
   phone        String? // Telefone do cliente
   role         String        @default("CLIENT")
@@ -24,16 +24,25 @@ model User {
   eventLimit   Int           @default(5) // Limite de eventos criados pelo organizador
   photoUrl     String? // URL do avatar escolhido
   preferences  String? // Preferências salvas como JSON string
-  paymentMock  String? // Cartão simulado salvo como JSON string
   creatorId    String? // Vincula o Porteiro ao Organizador que o criou
   reservations Reservation[]
   events       Event[]       @relation("OrganizerEvents") // Apenas para ORGANIZER
   scannedReservations Reservation[] @relation("ScannedReservations")
+  paymentMethods PaymentMethod[]
+}
+
+model PaymentMethod {
+  id         String @id @default(uuid())
+  userId     String
+  brand      String   // "visa", "mastercard", etc.
+  lastFour   String   // "4242"
+  holderName String   // Nome no cartão
+  user       User     @relation(fields: [userId], references: [id])
 }
 
 model Event {
   id                String        @id @default(uuid())
-  externalId        String?       // ID da API externa (TMDb ou Ticketmaster) - NÃO É MAIS UNIQUE
+  externalId        String?       // ID da API externa (TMDb ou Ticketmaster)
   type              String        @default("MOVIE") // MOVIE ou SHOW
   title             String
   description       String? // Descrição longa do evento
@@ -43,7 +52,7 @@ model Event {
   date              DateTime
   location          String
   city              String        @default("São Paulo") // Cidade do cinema/evento
-  price             Float
+  priceInCents      Int           // Preço em centavos (ex: R$50,00 = 5000)
   capacity          Int
   rating            String   @default("Livre") // Classificacao indicativa (Livre, 10, 12, 14, 16, 18)
   maxTicketsPerUser Int           @default(4) // Limite de compras por usuário
@@ -59,7 +68,7 @@ model Seat {
   eventId      String
   row          String
   number       Int
-  status       String        @default("AVAILABLE") // AVAILABLE, SOLD
+  status       String        @default("AVAILABLE") // AVAILABLE, RESERVED, SOLD, CORTESIA
   event        Event         @relation(fields: [eventId], references: [id])
   reservations Reservation[]
 
@@ -71,16 +80,25 @@ model Reservation {
   userId    String
   eventId   String
   seatId    String
-  status    String // RESERVED, PAID, CANCELLED
-  qrCodeUrl String? // URL do QR Code de validação
+  status    String // RESERVED, PAID, CANCELLED, USED
   expiresAt DateTime? // Tempo limite para pagar
   createdAt DateTime  @default(now())
 
   scannedAt DateTime?
   scannedById String?
 
-  user  User  @relation(fields: [userId], references: [id])
-  event Event @relation(fields: [eventId], references: [id])
-  seat  Seat  @relation(fields: [seatId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+  event   Event   @relation(fields: [eventId], references: [id])
+  seat    Seat    @relation(fields: [seatId], references: [id])
   scannedBy User? @relation("ScannedReservations", fields: [scannedById], references: [id])
+  ticket  Ticket?
 }
+
+model Ticket {
+  id            String      @id @default(uuid())
+  reservationId String      @unique
+  qrCodeData    String      // JWT assinado (dados opacos do QR Code)
+  issuedAt      DateTime    @default(now())
+  reservation   Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+}
+

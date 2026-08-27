@@ -1,10 +1,11 @@
-import app from './app';
 import dotenv from 'dotenv';
 
+// dotenv DEVE ser carregado ANTES de qualquer import que use config.ts (fail-fast)
 dotenv.config();
 
-const PORT = process.env.PORT || 3333;
+import app from './app';
+import { config } from './src/config';
 
-app.listen(PORT, () => {
-  console.log(`🚀 Backend rodando na porta ${PORT}`);
+app.listen(config.port, () => {
+  console.log(`🚀 Backend rodando na porta ${config.port}`);
 });

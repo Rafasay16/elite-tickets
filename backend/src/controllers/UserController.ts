@@ -5,7 +5,7 @@ import { UserService } from '../services/UserService';
 export class UserController {
   static async getMyTickets(req: AuthRequest, res: Response) {
     try {
-      const ingressos = await UserService.getMyTickets(req.user.id);
+      const ingressos = await UserService.getMyTickets(req.user!.id);
       return res.json({ ingressos });
     } catch (error: any) {
       return res.status(500).json({ error: error.message });
@@ -14,7 +14,7 @@ export class UserController {
 
   static async deleteReservation(req: AuthRequest, res: Response) {
     try {
-      await UserService.deleteReservation(req.params.id as string, req.user.id);
+      await UserService.deleteReservation(req.params.id as string, req.user!.id);
       return res.json({ success: true });
     } catch (error: any) {
       if (error.message === 'Acesso negado') {
@@ -26,7 +26,7 @@ export class UserController {
 
   static async getProfile(req: AuthRequest, res: Response) {
     try {
-      const profile = await UserService.getProfile(req.user.id);
+      const profile = await UserService.getProfile(req.user!.id);
       return res.json({ profile });
     } catch (error: any) {
       if (error.message === 'Usuário não encontrado') {
@@ -38,7 +38,7 @@ export class UserController {
 
   static async updateProfile(req: AuthRequest, res: Response) {
     try {
-      const profile = await UserService.updateProfile(req.body, req.user.id);
+      const profile = await UserService.updateProfile(req.body, req.user!.id);
       return res.json({ success: true, profile });
     } catch (error: any) {
       if (error.message === 'Usuário não encontrado') {
@@ -53,7 +53,7 @@ export class UserController {
 
   static async createPorteiro(req: AuthRequest, res: Response) {
     try {
-      const porteiro = await UserService.createPorteiro(req.body, req.user.id);
+      const porteiro = await UserService.createPorteiro(req.body, req.user!.id);
       return res.json({ success: true, porteiro });
     } catch (error: any) {
       return res.status(400).json({ error: error.message });
@@ -62,7 +62,7 @@ export class UserController {
 
   static async getPorteiros(req: AuthRequest, res: Response) {
     try {
-      const porteiros = await UserService.getPorteiros(req.user.id);
+      const porteiros = await UserService.getPorteiros(req.user!.id);
       return res.json(porteiros);
     } catch (error: any) {
       return res.status(500).json({ error: error.message });
@@ -71,7 +71,7 @@ export class UserController {
 
   static async deletePorteiro(req: AuthRequest, res: Response) {
     try {
-      await UserService.deletePorteiro(req.params.id as string, req.user.id);
+      await UserService.deletePorteiro(req.params.id as string, req.user!.id);
       return res.json({ success: true });
     } catch (error: any) {
       if (error.message === 'Você não tem permissão para excluir este usuário.') {
@@ -86,7 +86,7 @@ export class UserController {
       const { password } = req.body;
       if (!password) return res.status(400).json({ error: 'A nova senha é obrigatória.' });
       
-      await UserService.resetPorteiroPassword(req.params.id as string, password, req.user.id);
+      await UserService.resetPorteiroPassword(req.params.id as string, password, req.user!.id);
       return res.json({ success: true });
     } catch (error: any) {
       return res.status(403).json({ error: error.message });
@@ -95,7 +95,7 @@ export class UserController {
 
   static async getPorteiroLogs(req: AuthRequest, res: Response) {
     try {
-      const logs = await UserService.getPorteiroLogs(req.params.id as string, req.user.id);
+      const logs = await UserService.getPorteiroLogs(req.params.id as string, req.user!.id);
       return res.json(logs);
     } catch (error: any) {
       return res.status(403).json({ error: error.message });

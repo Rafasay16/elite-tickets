@@ -27,7 +27,7 @@ export class EventController {
 
   static async listMyEvents(req: AuthRequest, res: Response) {
     try {
-      const events = await EventService.listMyEvents(req.user.id);
+      const events = await EventService.listMyEvents(req.user!.id);
       return res.json({ events });
     } catch (error: any) {
       return res.status(500).json({ error: error.message });
@@ -36,7 +36,7 @@ export class EventController {
 
   static async create(req: AuthRequest, res: Response) {
     try {
-      const event = await EventService.create(req.body, req.user.id);
+      const event = await EventService.create(req.body, req.user!.id);
       return res.json({ success: true, event });
     } catch (error: any) {
       if (error.message === 'Organizador não encontrado') {
@@ -51,7 +51,7 @@ export class EventController {
 
   static async updateStatus(req: AuthRequest, res: Response) {
     try {
-      const event = await EventService.updateStatus(req.body.id, req.body, req.user.id);
+      const event = await EventService.updateStatus(req.body.id, req.body, req.user!.id);
       return res.json({ success: true, event });
     } catch (error: any) {
       if (error.message === 'Evento não encontrado ou acesso negado') {
@@ -72,7 +72,7 @@ export class EventController {
 
   static async issueCortesia(req: AuthRequest, res: Response) {
     try {
-      const reservation = await EventService.issueCortesia(req.body, req.user.id);
+      const reservation = await EventService.issueCortesia(req.body, req.user!.id);
       return res.json({ success: true, reservation });
     } catch (error: any) {
       if (error.message === 'Evento não encontrado ou acesso negado') {
