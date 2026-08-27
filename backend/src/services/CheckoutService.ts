@@ -84,7 +84,13 @@ export class CheckoutService {
     if (reservation.userId !== userId) throw new Error('Ingresso não encontrado ou acesso negado');
     if (reservation.status !== 'PAID' && reservation.status !== 'USED') throw new Error('Ingresso não está válido');
 
-    return reservation;
+    return {
+      ...reservation,
+      event: {
+        ...reservation.event,
+        price: reservation.event.priceInCents / 100,
+      }
+    };
   }
 
   static async validateTicket(data: ValidateTicketInput, userId: string) {

@@ -25,7 +25,10 @@ export class EventService {
       where: whereClause,
       orderBy: { date: 'asc' }
     });
-    return events;
+    return events.map((e) => ({
+      ...e,
+      price: e.priceInCents / 100,
+    }));
   }
 
   static async getOne(id: string) {
@@ -34,7 +37,10 @@ export class EventService {
       include: { seats: true, organizer: true }
     });
     if (!event) throw new Error('Evento não encontrado');
-    return event;
+    return {
+      ...event,
+      price: event.priceInCents / 100,
+    };
   }
 
   static async listMyEvents(organizerId: string) {
@@ -42,7 +48,10 @@ export class EventService {
       where: { organizerId },
       orderBy: { date: 'asc' }
     });
-    return events;
+    return events.map((e) => ({
+      ...e,
+      price: e.priceInCents / 100,
+    }));
   }
 
   static async create(data: CreateEventInput, organizerId: string) {
@@ -111,7 +120,10 @@ export class EventService {
       await prisma.seat.createMany({ data: chunk });
     }
 
-    return event;
+    return {
+      ...event,
+      price: event.priceInCents / 100,
+    };
   }
 
   static async updateStatus(id: string, data: UpdateEventInput, organizerId: string) {
@@ -136,7 +148,10 @@ export class EventService {
       data: updatedData
     });
 
-    return updatedEvent;
+    return {
+      ...updatedEvent,
+      price: updatedEvent.priceInCents / 100,
+    };
   }
 
   static async getCortesiaSeats(eventId: string) {

@@ -253,7 +253,7 @@ export default function EventCatalog({ initialEvents, currentCity }: EventCatalo
                   <div>
                     <div className={styles.priceLabel}>A partir de</div>
                     <div className={styles.priceValue}>
-                      {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(event.price)}
+                      {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(event.price ?? ((event.priceInCents ?? 0) / 100))}
                     </div>
                   </div>
                   <span className={styles.sessionsHint}>Sessões disponíveis</span>

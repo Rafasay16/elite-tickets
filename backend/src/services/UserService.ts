@@ -9,7 +9,13 @@ export class UserService {
       include: { event: true, seat: true, ticket: true },
       orderBy: { createdAt: 'desc' }
     });
-    return reservations;
+    return reservations.map((r) => ({
+      ...r,
+      event: {
+        ...r.event,
+        price: r.event.priceInCents / 100,
+      },
+    }));
   }
 
   static async deleteReservation(id: string, userId: string) {
