@@ -105,7 +105,6 @@ export interface UpdateProfileInput {
   phone?: string;
   photoUrl?: string;
   preferences?: string;
-  paymentMock?: string;
   currentPassword?: string;
   newPassword?: string;
 }

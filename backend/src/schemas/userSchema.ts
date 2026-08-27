@@ -9,7 +9,6 @@ export const userSchema = {
       phone: z.string().optional(),
       photoUrl: z.string().url('URL inválida').optional(),
       preferences: z.string().optional(),
-      paymentMock: z.string().optional(),
       currentPassword: z.string().optional(),
       newPassword: z.string().min(6, 'A nova senha deve ter no mínimo 6 caracteres').optional()
     }).refine((data) => {
