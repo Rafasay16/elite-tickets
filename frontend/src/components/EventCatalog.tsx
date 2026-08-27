@@ -16,6 +16,7 @@ interface EventItem {
   date: string | Date;
   location: string;
   price: number;
+  priceInCents?: number;
   type: string;
   rating?: string | number | null;
   externalId?: string;
