@@ -1,120 +1,120 @@
 # Elite Tickets
 
-Uma plataforma full-stack de bilhetagem de eventos, reserva interativa de assentos e controle de acesso digital com validacao de ingressos via QR Code em tempo real, paineis administrativos de inteligencia de negocios e interface moderna.
+A full-stack event ticketing platform, interactive seat reservation, and digital access control with real-time QR Code ticket validation, business intelligence admin panels, and a modern interface.
 
-## Demonstracao Online em Producao
+## Online Production Demonstration
 
-- Plataforma Frontend: https://elite-tickets-vlr.vercel.app/
-- API Backend: https://elite-tickets-api-uiqi.onrender.com
+- Frontend Platform: https://elite-tickets-vlr.vercel.app/
+- Backend API: https://elite-tickets-api-uiqi.onrender.com
 
 ---
 
-## 1. Processo de Engenharia: Uso de Ferramentas de IA e Contribuicao Humana
+## 1. Engineering Process: Use of AI Tools and Human Contribution
 
-Em conformidade com as diretrizes do projeto, esta secao detalha a distribuicao entre o uso assistido de ferramentas de Inteligencia Artificial e a atuacao direta do desenvolvedor na arquitetura, modelagem de dados, organizacao estrutural e tomadas de decisao tecnica.
+In compliance with the project guidelines, this section details the distribution between the assisted use of Artificial Intelligence tools and the developer's direct role in architecture, data modeling, structural organization, and technical decision-making.
 
-### Ferramentas de IA Utilizadas
+### AI Tools Used
 
 - **Claude Code (Opus):**
-  - Utilizado como acelerador de codigo para scaffolding de rotas REST, prototipagem inicial de schemas de validacao Zod, mapeamento base de tipos TypeScript e geracao de esqueletos para operacoes CRUD.
-- **Gemini 3.7 Flash (High Thinking / Raciocinio Avancado):**
-  - Utilizado na analise de gargalos de performance, refatoracao de regras de sessao e sincronizacao de cookies de autenticacao, algoritmo de agrupamento de sessoes de cinema por data, logica de busca instantanea com normalizacao de texto (remocao de acentos) e auxilio no diagnostico de bugs de renderizacao do motor WebKit no iOS Safari.
-- **Impeccable (Suite de Auditoria e Critica Heuristica de Frontend):**
-  - Utilizado como ferramenta de apoio e checklist de design para auditoria visual de contraste, ritmos espaciais, ergonomia de toque em telas menores (320px a 768px), estados vazios (empty states) e consistencia na transicao entre temas claro e escuro.
+  - Used as a code accelerator for REST route scaffolding, initial prototyping of Zod validation schemas, base mapping of TypeScript types, and generating skeletons for CRUD operations.
+- **Gemini 3.7 Flash (High Thinking / Advanced Reasoning):**
+  - Used in analyzing performance bottlenecks, refactoring session rules and authentication cookie synchronization, cinema session grouping algorithm by date, instant search logic with text normalization (accent removal), and assisting in diagnosing WebKit rendering engine bugs on iOS Safari.
+- **Impeccable (Frontend Audit and Heuristic Critique Suite):**
+  - Used as a support tool and design checklist for visual audit of contrast, spatial rhythms, touch ergonomics on smaller screens (320px to 768px), empty states, and consistency in transitioning between light and dark themes.
 
-### O Que Foi Concebido, Arquitetado e Implementado Manualmente (Trabalho Humano e Engenharia)
+### What Was Conceived, Architected, and Implemented Manually (Human Work and Engineering)
 
-- **Arquitetura de Software e Organizacao Modular de Diretorios:**
-  - Planejamento e estruturacao completa do monorepo separando estritamente as responsabilidades do frontend e backend:
-    - **Backend em Camadas:** Divisao rigorosa em Controllers (recebimento e resposta HTTP), Services (regras de negocio puras), Middlewares (autenticacao e RBAC), Schemas (validacao de payload) e Database (Prisma ORM e migracoes).
-    - **Frontend Desacoplado (Next.js 14 App Router):** Separacao entre Server Components (para busca de dados no servidor e otimizacao de SEO) e Client Components (`*Client.tsx` para interatividade), isolando servicos de API (`src/services/`), utilitarios de formatacao e mascaras (`src/utils/`), e componentes atomicos reutilizaveis (`src/components/`).
-- **Modelagem Relacional de Banco de Dados e Consistencia Transacional:**
-  - Desenho do modelo de dados relacional no PostgreSQL (Entidades: User, Event, Seat, Reservation, Ticket, PaymentMethod).
-  - Preços monetários modelados com precisão inteira em centavos (`priceInCents Int`), eliminando problemas de arredondamento de Float.
-  - Tabela dedicada `Ticket` para dados criptográficos de validação, desacoplada da entidade `Reservation`.
-  - Transações atômicas com locks condicionais (`prisma.$transaction` e `updateMany` condicional `WHERE status = 'AVAILABLE'` e `WHERE status = 'PAID'`), garantindo matematicamente no banco a impossibilidade de venda duplicada (*double-booking*) e validação duplicada (*double-scan*) em cenários de alta concorrência.
-- **Segurança, Autenticacao e Governanca RBAC em 4 Niveis:**
-  - Segregação estrita de segredos criptográficos com inicialização *Fail-Fast* (`JWT_AUTH_SECRET` para sessões e `JWT_TICKET_SECRET` para assinatura de QR Codes; o servidor recusa o boot caso as variáveis estejam ausentes).
-  - Assinatura criptográfica HMAC não-forjável com verificação obrigatória (`jwt.verify`), sem fallbacks inseguros ou busca por prefixo (busca estrita por igualdade exata de ID).
-  - Proteção de dados pessoais (LGPD/Privacy by Design): payload do QR Code é 100% opaco e não trafega dados pessoais (`customerName`/`guestName`), sendo os dados do titular resolvidos exclusivamente no servidor após a verificação criptográfica.
-  - Modelagem do sistema de autorizacao por papeis (`CLIENT`, `ORGANIZER`, `PORTARIA`, `SUPER_ADMIN`), assegurando que produtores nao acessem eventos concorrentes e que operadores de portaria tenham acesso exclusivo e seguro ao HUD de leitura.
-  - Implementacao de politicas de hashing criptografico com Bcrypt (salt 10) e higienizacao de dados sensiveis (remocao de senhas antes do envio das respostas HTTP).
-- **Design System Tokenizado e Arquitetura CSS Proprietaria:**
-  - Desenvolvimento manual de um design system proprietario via CSS Modules e variaveis CSS puras (`globals.css`), sem dependencia de frameworks utilitarios inflados (como Tailwind). A arquitetura foi concebida para suportar Glassmorphism, degradês calculados e troca instantanea entre Dark Mode e Light Mode atraves de atributos semanticos (`[data-theme='light']`).
-- **Estrategia de Infraestrutura, Deploy e CI/CD:**
-  - Escolha e configuracao dos ambientes de hospedagem: Vercel para o frontend em arquitetura Edge/Serverless, Render para o servico de API Express em container Node.js, e Supabase para o cluster gerenciado de PostgreSQL com connection pooling.
-- **Depuracao em Dispositivos Fisicos Reais:**
-  - Testes manuais e depuracao em smartphones fisicos (iPhone/Safari e Android/Chrome), identificando comportamentos especificos de motores de renderizacao movel, como o problema de corte de elementos fixos dentro de containers com `backdrop-filter` no WebKit do iOS Safari, solucionado com a implementacao de `createPortal`.
-- **Concepcao Criativa das Funcionalidades de Valor Agregado:**
-  - Idealizacao humana de todas as funcionalidades de produto comercial: feedback auditivo sintetizado na portaria via Web Audio API, compartilhamento inteligente por WhatsApp Web Share API, busca automatica de enderecos por CEP (ViaCEP), integracao de geolocalizacao com dados oficiais do IBGE e gerador de senhas seguras com copia rapida.
-
----
-
-## 2. Iniciativas e Diferenciais de Criatividade (Alem do Escopo Basico)
-
-Abaixo estao as funcionalidades implementadas por iniciativa propria para tornar a plataforma um produto de nivel comercial:
-
-1. **Sintetizador Sonoro Nativo na Portaria (Web Audio API):**
-   - Em vez de depender apenas de alertas visuais, a tela da portaria conta com sintetizador de frequencias sonoras que emite um acorde harmonico em caso de ingresso valido e um sinal sonoro dissonante para ingressos duplicados ou invalidos, acelerando o fluxo de filas.
-2. **QR Code Integrado no Canhoto do Ingresso com Modal de Ampliacao:**
-   - O QR Code fica diretamente visivel no corpo do ingresso digital, eliminando cliques extras na entrada do evento. Inclui botao de ampliacao em tela cheia para leitura facil em condicoes de luz solar ou telas riscadas.
-3. **Geolocalizacao Automatica e Integracao com a API do IBGE:**
-   - O usuario pode identificar sua localizacao via GPS (Reverse Geocoding) ou selecionar seu estado e municipio por meio da base oficial do IBGE, filtrando eventos da sua regiao.
-4. **Preenchimento Automatico de Endereco por CEP (ViaCEP):**
-   - No painel administrativo do organizador, a digitacao do CEP do local preenche automaticamente os campos de logradouro, bairro, cidade e estado.
-5. **Governanca de Super Administrador com Geracao Segura de Senhas:**
-   - O Super Admin pode parametrizar taxas de conveniencia individualizadas por produtor, limitar cotas de publicacao de eventos e gerar senhas temporarias com botao de copia imediata para a area de transferencia.
-6. **Alternador de Tema Claro e Escuro (Dark e Light Mode):**
-   - Suporte completo a alternancia de tema com persistencia no navegador e tokens semanticos que garantem legibilidade e contraste em todas as telas.
-7. **Menu Mobile Adaptativo via React Portal:**
-   - Desenvolvido especificamente para evitar o problema classico do Safari/WebKit em que elementos fixos ficam cortados dentro de headers com efeito de desfoque (backdrop-filter).
+- **Software Architecture and Modular Directory Organization:**
+  - Complete planning and structuring of the monorepo, strictly separating frontend and backend responsibilities:
+    - **Layered Backend:** Strict division into Controllers (HTTP request/response), Services (pure business rules), Middlewares (authentication and RBAC), Schemas (payload validation), and Database (Prisma ORM and migrations).
+    - **Decoupled Frontend (Next.js 14 App Router):** Separation between Server Components (for server-side data fetching and SEO optimization) and Client Components (`*Client.tsx` for interactivity), isolating API services (`src/services/`), formatting and mask utilities (`src/utils/`), and reusable atomic components (`src/components/`).
+- **Relational Database Modeling and Transactional Consistency:**
+  - Design of the relational data model in PostgreSQL (Entities: User, Event, Seat, Reservation, Ticket, PaymentMethod).
+  - Monetary prices modeled with integer precision in cents (`priceInCents Int`), eliminating Float rounding issues.
+  - Dedicated `Ticket` table for cryptographic validation data, decoupled from the `Reservation` entity.
+  - Atomic transactions with conditional locks (`prisma.$transaction` and conditional `updateMany` `WHERE status = 'AVAILABLE'` and `WHERE status = 'PAID'`), mathematically guaranteeing at the database level the impossibility of double-booking and double-scan in high-concurrency scenarios.
+- **Security, Authentication, and 4-Level RBAC Governance:**
+  - Strict segregation of cryptographic secrets with *Fail-Fast* initialization (`JWT_AUTH_SECRET` for sessions and `JWT_TICKET_SECRET` for QR Code signing; the server refuses to boot if variables are missing).
+  - Unforgeable HMAC cryptographic signature with mandatory verification (`jwt.verify`), without insecure fallbacks or prefix searching (strict search for exact ID equality).
+  - Personal data protection (LGPD/Privacy by Design): QR Code payload is 100% opaque and does not transmit personal data (`customerName`/`guestName`); the ticket holder's data is resolved exclusively on the server after cryptographic verification.
+  - Modeling of the role-based access control (RBAC) system (`CLIENT`, `ORGANIZER`, `PORTARIA`, `SUPER_ADMIN`), ensuring that producers cannot access competing events and that gate operators have exclusive and secure access to the reading HUD.
+  - Implementation of cryptographic hashing policies with Bcrypt (salt 10) and sanitization of sensitive data (removal of passwords before sending HTTP responses).
+- **Tokenized Design System and Proprietary CSS Architecture:**
+  - Manual development of a proprietary design system via CSS Modules and pure CSS variables (`globals.css`), without depending on bloated utility frameworks (like Tailwind). The architecture was designed to support Glassmorphism, calculated gradients, and instant switching between Dark Mode and Light Mode through semantic attributes (`[data-theme='light']`).
+- **Infrastructure, Deploy, and CI/CD Strategy:**
+  - Choice and configuration of hosting environments: Vercel for the frontend in Edge/Serverless architecture, Render for the Express API service in a Node.js container, and Supabase for the managed PostgreSQL cluster with connection pooling.
+- **Debugging on Real Physical Devices:**
+  - Manual testing and debugging on physical smartphones (iPhone/Safari and Android/Chrome), identifying specific mobile rendering engine behaviors, such as the issue of fixed elements being cut off inside containers with `backdrop-filter` in iOS Safari's WebKit, solved by implementing `createPortal`.
+- **Creative Conception of Value-Added Features:**
+  - Human ideation of all commercial product features: synthesized auditory feedback at the gate via Web Audio API, smart sharing via WhatsApp Web Share API, automatic address search by ZIP code (ViaCEP), geolocation integration with official IBGE data, and a secure password generator with quick copy.
 
 ---
 
-## 3. Tecnologias Utilizadas
+## 2. Initiatives and Creativity Differentials (Beyond Basic Scope)
+
+Below are the features implemented on own initiative to make the platform a commercial-grade product:
+
+1. **Native Sound Synthesizer at the Gate (Web Audio API):**
+   - Instead of relying solely on visual alerts, the gate screen features a sound frequency synthesizer that emits a harmonic chord for a valid ticket and a dissonant beep for duplicate or invalid tickets, speeding up the queue flow.
+2. **Integrated QR Code on the Ticket Stub with Enlargement Modal:**
+   - The QR Code is directly visible on the body of the digital ticket, eliminating extra clicks at the event entrance. Includes a full-screen enlargement button for easy reading in sunlight or scratched screens.
+3. **Automatic Geolocation and IBGE API Integration:**
+   - Users can identify their location via GPS (Reverse Geocoding) or select their state and municipality using the official IBGE database, filtering events in their region.
+4. **Automatic Address Autofill by ZIP Code (ViaCEP):**
+   - In the organizer's admin panel, typing the venue's ZIP code automatically fills in the street, neighborhood, city, and state fields.
+5. **Super Administrator Governance with Secure Password Generation:**
+   - The Super Admin can parameterize individualized convenience fees per producer, limit event publication quotas, and generate temporary passwords with an immediate copy-to-clipboard button.
+6. **Light and Dark Mode Theme Toggler:**
+   - Full support for theme switching with browser persistence and semantic tokens that ensure readability and contrast on all screens.
+7. **Adaptive Mobile Menu via React Portal:**
+   - Developed specifically to avoid the classic Safari/WebKit issue where fixed elements get cut off inside headers with a blur effect (backdrop-filter).
+
+---
+
+## 3. Technologies Used
 
 ### Frontend
 - Framework: Next.js 14 (App Router)
-- Linguagem: TypeScript (Strict Typechecking)
-- Estilizacao: CSS Modules com variaveis e tokens semanticos
-- Icones: Icones vetoriais SVG customizados
-- Otimizacao de Imagens: Componente Image do Next.js integrado ao TMDB e DiceBear
-- Recursos Web: Web Audio API, Web Share API, Geolocation API, HTML5 Canvas QR
+- Language: TypeScript (Strict Typechecking)
+- Styling: CSS Modules with semantic variables and tokens
+- Icons: Customized SVG vector icons
+- Image Optimization: Next.js Image Component integrated with TMDB and DiceBear
+- Web Features: Web Audio API, Web Share API, Geolocation API, HTML5 Canvas QR
 
 ### Backend
-- Ambiente de Execucao: Node.js
+- Runtime Environment: Node.js
 - Framework: Express
-- Linguagem: TypeScript (Tipagem estrita, interfaces de domínio dedicadas, sem `any`)
+- Language: TypeScript (Strict typing, dedicated domain interfaces, no `any`)
 - ORM: Prisma
-- Banco de Dados: PostgreSQL (Supabase)
-- Criptografia e Autenticação: JWT com fail-fast e segregação de chaves, Bcrypt (salt 10)
-- Testes Automatizados: Vitest (com suítes de concorrência, segurança de ingressos e autenticação)
+- Database: PostgreSQL (Supabase)
+- Cryptography and Authentication: JWT with fail-fast and key segregation, Bcrypt (salt 10)
+- Automated Testing: Vitest (with concurrency, ticket security, and authentication suites)
 
-### Infraestrutura e Hospedagem
+### Infrastructure and Hosting
 - Frontend: Vercel
 - Backend: Render
-- Banco de Dados: Supabase
+- Database: Supabase
 
 ---
 
-## 4. Estrutura de Papeis e Permissoes (RBAC)
+## 4. Role Structure and Permissions (RBAC)
 
-- **CLIENT:** Acessa o catalogo de eventos, realiza busca e filtros, seleciona assentos, efetua reservas, visualiza e compartilha ingressos na carteira digital e edita seu perfil.
-- **ORGANIZER:** Cria e gerencia eventos, acompanha indicadores (total de eventos, capacidade e ingressos vendidos), emite cortesias VIP e cadastra equipes de portaria.
-- **PORTARIA:** Interface simplificada e segura para leitura de ingressos via camera ou digitacao manual, com feedback sonoro e auditoria de entradas em tempo real.
-- **SUPER_ADMIN:** Painel de governanca global da plataforma, permitindo cadastrar produtores, definir taxas de servico customizadas, pausar contas e redefinir credenciais.
+- **CLIENT:** Accesses the event catalog, performs searches and filters, selects seats, makes reservations, views and shares tickets in the digital wallet, and edits their profile.
+- **ORGANIZER:** Creates and manages events, monitors indicators (total events, capacity, and tickets sold), issues VIP complimentary tickets, and registers gate staff.
+- **PORTARIA (GATE):** Simplified and secure interface for reading tickets via camera or manual typing, with auditory feedback and real-time entry auditing.
+- **SUPER_ADMIN:** Global platform governance panel, allowing the registration of producers, setting custom service fees, pausing accounts, and resetting credentials.
 
 ---
 
-## 5. Instrucoes de Instalacao, Execucao Local e Testes
+## 5. Installation, Local Execution, and Testing Instructions
 
-### Pre-requisitos
-- Node.js (versao 18.0.0 ou superior)
-- Gerenciador de pacotes npm
+### Prerequisites
+- Node.js (version 18.0.0 or higher)
+- npm package manager
 
-### Passo a Passo
+### Step by Step
 
-1. Clonar o repositorio e instalar as dependencias:
+1. Clone the repository and install dependencies:
 ```bash
 git clone https://github.com/Rafasay16/elite-tickets.git
 cd elite-tickets
@@ -122,25 +122,25 @@ npm install
 npm run install:all
 ```
 
-2. Configurar as variaveis de ambiente:
+2. Configure environment variables:
 
-Arquivo `backend/.env`:
+`backend/.env` file:
 ```env
 PORT=3333
-DATABASE_URL="postgresql://usuario:senha@host:porta/banco?pgbouncer=true"
-DIRECT_URL="postgresql://usuario:senha@host:porta/banco"
-JWT_AUTH_SECRET="chave_secreta_para_tokens_de_sessao"
-JWT_TICKET_SECRET="chave_secreta_para_assinatura_de_ingressos_qr"
-TMDB_API_KEY="chave_opcional_tmdb"
-TICKETMASTER_API_KEY="chave_opcional_ticketmaster"
+DATABASE_URL="postgresql://user:password@host:port/database?pgbouncer=true"
+DIRECT_URL="postgresql://user:password@host:port/database"
+JWT_AUTH_SECRET="secret_key_for_session_tokens"
+JWT_TICKET_SECRET="secret_key_for_qr_ticket_signing"
+TMDB_API_KEY="optional_tmdb_key"
+TICKETMASTER_API_KEY="optional_ticketmaster_key"
 ```
 
-Arquivo `frontend/.env.local`:
+`frontend/.env.local` file:
 ```env
 NEXT_PUBLIC_API_URL="http://localhost:3333/api"
 ```
 
-3. Inicializar e popular o banco de dados:
+3. Initialize and seed the database:
 ```bash
 cd backend
 npx prisma generate
@@ -149,65 +149,65 @@ npx tsx scripts/seed.ts
 cd ..
 ```
 
-4. Executar os testes automatizados (Backend):
+4. Run automated tests (Backend):
 ```bash
 cd backend
 npm test
 cd ..
 ```
 
-5. Executar os servidores de desenvolvimento simultaneamente:
+5. Run development servers simultaneously:
 ```bash
 npm run dev
 ```
 
-- A aplicacao web estara acessivel em: `http://localhost:3000`
-- A API backend estara acessivel em: `http://localhost:3333`
+- The web application will be accessible at: `http://localhost:3000`
+- The backend API will be accessible at: `http://localhost:3333`
 
 ---
 
-## 6. Cobertura de Testes Automatizados (Vitest)
+## 6. Automated Testing Coverage (Vitest)
 
-O backend conta com suítes de testes automatizados cobrindo os fluxos críticos de negócio:
+The backend features automated test suites covering critical business flows:
 
 1. **`tests/concurrency.test.ts`**:
-   - **Garantia Anti-Double-Booking**: Dispara 3 requisições simultâneas para o mesmo assento via `Promise.allSettled`; valida que exatamente 1 tem sucesso e as demais falham com conflito.
-   - **Garantia Anti-Double-Scan**: Dispara leituras simultâneas do mesmo QR Code; valida que apenas a primeira é liberada e a segunda é rejeitada com `JÁ UTILIZADO`.
+   - **Anti-Double-Booking Guarantee**: Fires 3 simultaneous requests for the same seat via `Promise.allSettled`; validates that exactly 1 succeeds and the others fail with a conflict.
+   - **Anti-Double-Scan Guarantee**: Fires simultaneous scans of the same QR Code; validates that only the first is cleared and the second is rejected with `ALREADY USED`.
 2. **`tests/ticket_security.test.ts`**:
-   - **Payload Opaco sem PII**: Inspeciona o JWT do QR Code para garantir ausência de dados pessoais (`customerName`/`guestName`).
-   - **Rejeição de QR Adulterado/Forjado**: Validação obrigatória de assinatura via `jwt.verify()`.
-   - **Impedimento de Ataque por Prefixo**: Rejeita identificadores UUID crus ou incompletos.
-   - **Resolução Segura no Servidor**: Validação de ingresso legítimo e resolução de dados no banco.
+   - **Opaque Payload without PII**: Inspects the QR Code JWT to ensure the absence of personal data (`customerName`/`guestName`).
+   - **Rejection of Tampered/Forged QR**: Mandatory signature validation via `jwt.verify()`.
+   - **Prevention of Prefix Attack**: Rejects raw or incomplete UUID identifiers.
+   - **Secure Server Resolution**: Validation of legitimate ticket and data resolution in the database.
 3. **`tests/auth.test.ts`**:
-   - **Segregação de Segredos**: Prova que tokens de autenticação não podem validar ingressos e vice-versa.
-   - **Fluxo de Registro e Login**: Verificação de senhas com hash Bcrypt e geração de JWT.
+   - **Secret Segregation**: Proves that authentication tokens cannot validate tickets and vice versa.
+   - **Registration and Login Flow**: Password verification with Bcrypt hash and JWT generation.
 
 ---
 
-## 7. Credenciais de Teste para Validacao
+## 7. Test Credentials for Validation
 
-| Papel | E-mail | Senha | Area de Acesso |
+| Role | E-mail | Password | Access Area |
 |---|---|---|---|
-| Cliente | rafinha@gmail.com | 123456 | Catalogo, Reserva, Meus Ingressos, Perfil |
-| Cliente | reuel@gmail.com | 123456 | Catalogo, Reserva, Meus Ingressos, Perfil |
-| Organizador | admin@admin.com | 123456 | Painel do Organizador (/admin), Portaria |
-| Portaria | portaria@elite.com | 123456 | HUD Scanner da Portaria (/portaria) |
-| Super Admin | superadmin@elite.com | 123456 | Governanca Global (/super-admin) |
+| Client | rafinha@gmail.com | 123456 | Catalog, Reservation, My Tickets, Profile |
+| Client | reuel@gmail.com | 123456 | Catalog, Reservation, My Tickets, Profile |
+| Organizer | admin@admin.com | 123456 | Organizer Panel (/admin), Gate |
+| Gate | portaria@elite.com | 123456 | Gate Scanner HUD (/portaria) |
+| Super Admin | superadmin@elite.com | 123456 | Global Governance (/super-admin) |
 
 ---
 
-## 8. Informacoes de Suporte e Solucao de Problemas (Troubleshooting)
+## 8. Support and Troubleshooting Information
 
-Caso encontre algum comportamento inesperado durante a execucao ou teste:
+If you encounter any unexpected behavior during execution or testing:
 
-1. **Tempo de Resposta na Primeira Requisicao da API (Cold Start no Render):**
-   - O backend em producao esta hospedado no tier gratuito do Render. Caso fique inativo por alguns minutos, o primeiro carregamento de dados pode levar cerca de 30 a 50 segundos para inicializar a instancia. Apos o primeiro acesso, as respostas ocorrem normalmente em milissegundos.
-2. **Permissao de Camera no Scanner da Portaria:**
-   - Os navegadores modernos exigem conexao segura (HTTPS ou localhost) para conceder acesso a camera. Ao testar o leitor da portaria em dispositivos moveis, certifique-se de autorizar a permissao de camera quando solicitada pelo navegador. Caso a camera nao esteja disponivel, a aba de **Digitacao Manual** permite validar ingressos digitando o identificador do ticket.
-3. **Troca de Tema e Armazenamento Local:**
-   - A preferencia de tema claro/escuro e persistida no `localStorage`. Caso a alternancia pareca nao responder ao trocar de navegador, limpe o cache de dados do site ou abra em modo anonimo.
-4. **Validacao de Build de Producao:**
-   - Ambos os pacotes foram validados com compilacao de producao sem erros de tipagem TypeScript:
+1. **Response Time on the First API Request (Cold Start on Render):**
+   - The production backend is hosted on Render's free tier. If inactive for a few minutes, the first data load may take about 30 to 50 seconds to initialize the instance. After the first access, responses occur normally in milliseconds.
+2. **Camera Permission in the Gate Scanner:**
+   - Modern browsers require a secure connection (HTTPS or localhost) to grant camera access. When testing the gate reader on mobile devices, make sure to authorize camera permission when requested by the browser. If the camera is unavailable, the **Manual Typing** tab allows you to validate tickets by typing the ticket identifier.
+3. **Theme Switching and Local Storage:**
+   - The light/dark theme preference is persisted in `localStorage`. If the switch doesn't seem to respond when changing browsers, clear the site's data cache or open it in incognito mode.
+4. **Production Build Validation:**
+   - Both packages have been validated with a production build without TypeScript typing errors:
    ```bash
    npm run build --prefix frontend
    npm run build --prefix backend
